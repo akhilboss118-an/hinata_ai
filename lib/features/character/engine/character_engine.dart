@@ -171,11 +171,6 @@ class CharacterEngine extends ConsumerWidget {
       avatar = avatar
           .animate(onPlay: (c) => c.repeat(reverse: true))
           .moveY(begin: -14, end: 0, duration: 550.ms, curve: Curves.easeOutCubic);
-    } else if (state.isTalking) {
-      // Talking animation motion when Hinata replies to chat
-      avatar = avatar
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: -8, end: 4, duration: 450.ms, curve: Curves.easeInOut);
     } else if (state.currentEmotion == CharacterEmotion.sad ||
         state.currentEmotion == CharacterEmotion.crying) {
       avatar = avatar
