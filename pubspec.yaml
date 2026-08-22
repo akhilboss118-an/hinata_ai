@@ -24,6 +24,7 @@ dependencies:
 
   # 3D Model Rendering Viewport
   model_viewer_plus: ^1.8.0
+  video_player: ^2.8.6
 
   # UI Design Tokens & Animations
   google_fonts: ^6.2.1
@@ -44,5 +45,6 @@ flutter:
   assets:
     - assets/models/girl.glb
     - assets/models/hinata_anim.glb
+    - assets/videos/
     - assets/images/
     - assets/icons/

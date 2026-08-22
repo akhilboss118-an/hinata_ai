@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:hinata_ai/app/theme/app_colors.dart';
 import 'package:hinata_ai/app/theme/app_shadows.dart';
 import 'package:hinata_ai/app/theme/app_typography.dart';
@@ -11,6 +10,7 @@ import '../models/character_emotion.dart';
 import '../models/character_gesture.dart';
 import 'character_controller.dart';
 import 'character_state.dart';
+import 'video_character_engine.dart';
 
 /// Full-Screen Character Viewport & Talking-Tom Touch Gesture Handler
 class CharacterEngine extends ConsumerWidget {
@@ -62,7 +62,7 @@ class CharacterEngine extends ConsumerWidget {
               borderColor: AppColors.primaryLight.withValues(alpha: 0.20),
             ),
 
-            // 3D Character Stage (merged GLB with all animation clips)
+            // Video Character Stage (MP4 video loop engine)
             Positioned.fill(
               child: _buildModelStage(characterState),
             ),
@@ -130,79 +130,8 @@ class CharacterEngine extends ConsumerWidget {
     return raw > max ? max : raw;
   }
 
-  /// Maps live character state to the merged GLB animation clip name
-  String _clipFor(CharacterState state) {
-    final gesture = state.activeGesture;
-
-    // Touch reactions take priority
-    if (gesture != null) {
-      switch (gesture) {
-        case CharacterGesture.headPat:
-        case CharacterGesture.hold:
-        case CharacterGesture.cheekPoke:
-        case CharacterGesture.noseTap:
-          return 'Reaction';
-        case CharacterGesture.poke:
-          return state.currentEmotion == CharacterEmotion.annoyed ? 'Angry' : 'Reaction';
-        case CharacterGesture.swipe:
-        case CharacterGesture.tickle:
-          return 'Excited';
-      }
-    }
-
-    // Emotional reactions from chat
-    switch (state.currentEmotion) {
-      case CharacterEmotion.angry:
-      case CharacterEmotion.annoyed:
-        return 'Angry';
-      case CharacterEmotion.sad:
-      case CharacterEmotion.crying:
-      case CharacterEmotion.sleepy:
-        return 'SadIdle';
-      case CharacterEmotion.happy:
-      case CharacterEmotion.excited:
-      case CharacterEmotion.laughing:
-      case CharacterEmotion.playful:
-      case CharacterEmotion.affectionate:
-        return 'Excited';
-      case CharacterEmotion.shy:
-      case CharacterEmotion.embarrassed:
-      case CharacterEmotion.surprised:
-        return 'Reaction';
-      case CharacterEmotion.neutral:
-      case CharacterEmotion.confused:
-      case CharacterEmotion.thinking:
-        return 'Standing';
-    }
-  }
-
   Widget _buildModelStage(CharacterState state) {
-    // Web iframe requires absolute resolved URL so model-viewer loads from root
-    final modelSrc = kIsWeb
-        ? Uri.base.resolve('assets/assets/models/hinata_anim.glb').toString()
-        : 'assets/models/hinata_anim.glb';
-
-    final currentClip = _clipFor(state);
-
-    return ModelViewer(
-      key: ValueKey('hinata-3d-model-$currentClip'),
-      src: modelSrc,
-      alt: 'Hinata 3D companion',
-      animationName: currentClip,
-      autoPlay: true,
-      loading: Loading.eager,
-      cameraControls: false,
-      disableZoom: true,
-      interactionPrompt: InteractionPrompt.none,
-      scale: '100 100 100',
-      cameraOrbit: '0deg 82deg 2.4m',
-      minCameraOrbit: '0deg 82deg 2.4m',
-      maxCameraOrbit: '0deg 82deg 2.4m',
-      cameraTarget: '0m 0.35m 0m',
-      fieldOfView: '30deg',
-      exposure: 1.1,
-      shadowIntensity: 0.6,
-    );
+    return VideoCharacterEngine(state: state);
   }
 
   Widget _buildSpeechBubble(String text, CharacterEmotion emotion) {
