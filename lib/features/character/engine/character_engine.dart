@@ -10,7 +10,6 @@ import '../models/character_emotion.dart';
 import '../models/character_gesture.dart';
 import 'character_controller.dart';
 import 'character_state.dart';
-import 'video_character_engine.dart';
 
 /// Full-Screen Character Viewport & Talking-Tom Touch Gesture Handler
 class CharacterEngine extends ConsumerWidget {
@@ -131,7 +130,44 @@ class CharacterEngine extends ConsumerWidget {
   }
 
   Widget _buildModelStage(CharacterState state) {
-    return VideoCharacterEngine(state: state);
+    Widget avatar = Image.asset(
+      'assets/images/hinata_character.png',
+      fit: BoxFit.contain,
+      height: 540,
+    );
+
+    // Dynamic micro-animations per character emotion state
+    if (state.currentEmotion == CharacterEmotion.angry ||
+        state.currentEmotion == CharacterEmotion.annoyed) {
+      avatar = avatar
+          .animate(onPlay: (c) => c.repeat(reverse: true))
+          .shake(hz: 5, duration: 600.ms);
+    } else if (state.currentEmotion == CharacterEmotion.happy ||
+        state.currentEmotion == CharacterEmotion.excited ||
+        state.activeGesture == CharacterGesture.tickle ||
+        state.activeGesture == CharacterGesture.swipe) {
+      avatar = avatar
+          .animate(onPlay: (c) => c.repeat(reverse: true))
+          .moveY(begin: -18, end: 0, duration: 550.ms, curve: Curves.easeOutCubic);
+    } else if (state.currentEmotion == CharacterEmotion.sad ||
+        state.currentEmotion == CharacterEmotion.crying) {
+      avatar = avatar
+          .animate(onPlay: (c) => c.repeat(reverse: true))
+          .moveY(begin: 4, end: 12, duration: 2000.ms, curve: Curves.easeInOut);
+    } else {
+      // Natural idle breathing float
+      avatar = avatar
+          .animate(onPlay: (c) => c.repeat(reverse: true))
+          .moveY(begin: -8, end: 8, duration: 2400.ms, curve: Curves.easeInOutCubic);
+    }
+
+    return Align(
+      alignment: const Alignment(0, 0.42),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 30),
+        child: avatar,
+      ),
+    );
   }
 
   Widget _buildSpeechBubble(String text, CharacterEmotion emotion) {
