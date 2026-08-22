@@ -153,7 +153,7 @@ class CharacterEngine extends ConsumerWidget {
 
   Widget _buildModelStage(CharacterState state) {
     Widget avatar = Image.asset(
-      'assets/images/hinata_character.png',
+      'assets/images/hinata_standing_idle.png',
       fit: BoxFit.contain,
       height: 520,
     );
