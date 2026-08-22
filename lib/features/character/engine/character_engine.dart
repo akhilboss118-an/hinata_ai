@@ -177,10 +177,11 @@ class CharacterEngine extends ConsumerWidget {
           .animate(onPlay: (c) => c.repeat(reverse: true))
           .moveY(begin: 4, end: 10, duration: 2000.ms, curve: Curves.easeInOut);
     } else {
-      // Natural idle breathing float
+      // Natural idle breathing float & scale pulse
       avatar = avatar
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: -6, end: 6, duration: 2400.ms, curve: Curves.easeInOutCubic);
+          .moveY(begin: -10, end: 10, duration: 2200.ms, curve: Curves.easeInOutCubic)
+          .scale(begin: const Offset(1.0, 1.0), end: const Offset(1.025, 1.025), duration: 2200.ms, curve: Curves.easeInOutCubic);
     }
 
     return Center(
