@@ -10,7 +10,6 @@ import '../models/character_emotion.dart';
 import '../models/character_gesture.dart';
 import 'character_controller.dart';
 import 'character_state.dart';
-import 'video_character_engine.dart';
 
 /// Full-Screen Character Viewport & Talking-Tom Touch Gesture Handler
 class CharacterEngine extends ConsumerWidget {
@@ -33,54 +32,33 @@ class CharacterEngine extends ConsumerWidget {
         return Stack(
           alignment: Alignment.center,
           children: [
-            // High-Contrast Vibrant Radial Gradient Background (Highlights dark hair & dress)
+            // Subtle Radial Gradient Background (Stitch spec)
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
-                    center: const Alignment(0, -0.15),
-                    radius: 1.15,
-                    colors: const [
-                      Color(0xFF5B21B6), // Vibrant Violet Spotlight
-                      Color(0xFF2E1065), // Rich Royal Indigo
-                      Color(0xFF0F172A), // Deep Slate Foundation
+                    center: const Alignment(0, -0.1),
+                    radius: 1.1,
+                    colors: [
+                      AppColors.surfaceCardHover.withValues(alpha: 0.4),
+                      AppColors.background.withValues(alpha: 0.9),
+                      AppColors.backgroundDeep,
                     ],
-                    stops: const [0.0, 0.55, 1.0],
                   ),
                 ),
               ),
             ),
 
-            // Glowing Ethereal Spotlight Halo (Ensures high contrast behind character silhouette)
-            Positioned(
-              top: constraints.maxHeight * 0.15,
-              child: Container(
-                width: 320,
-                height: 320,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFA855F7).withValues(alpha: 0.25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFA855F7).withValues(alpha: 0.35),
-                      blurRadius: 90,
-                      spreadRadius: 30,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Decorative Ethereal Rings (glass-tube halo)
+            // Decorative Ethereal Rings (glass-tube halo, lifted above center)
             _EtherealRing(
               diameter: _clampWidth(constraints.maxWidth, 0.95, 450),
               liftFactor: 0.10,
-              borderColor: const Color(0xFFC084FC).withValues(alpha: 0.25),
+              borderColor: AppColors.primaryLight.withValues(alpha: 0.10),
             ),
             _EtherealRing(
               diameter: _clampWidth(constraints.maxWidth, 0.85, 400),
               liftFactor: 0.10,
-              borderColor: const Color(0xFFE9D5FF).withValues(alpha: 0.35),
+              borderColor: AppColors.primaryLight.withValues(alpha: 0.20),
             ),
 
             // Video Character Stage (MP4 video loop engine)
@@ -153,12 +131,12 @@ class CharacterEngine extends ConsumerWidget {
 
   Widget _buildModelStage(CharacterState state) {
     Widget avatar = Image.asset(
-      'assets/images/hinata_standing_idle.png',
+      'assets/images/hinata_character.png',
       fit: BoxFit.contain,
-      height: 480,
+      height: 540,
     );
 
-    // Dynamic micro-animations per emotion and gesture
+    // Dynamic micro-animations per character emotion state
     if (state.currentEmotion == CharacterEmotion.angry ||
         state.currentEmotion == CharacterEmotion.annoyed) {
       avatar = avatar
@@ -170,23 +148,23 @@ class CharacterEngine extends ConsumerWidget {
         state.activeGesture == CharacterGesture.swipe) {
       avatar = avatar
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: -14, end: 0, duration: 550.ms, curve: Curves.easeOutCubic);
+          .moveY(begin: -18, end: 0, duration: 550.ms, curve: Curves.easeOutCubic);
     } else if (state.currentEmotion == CharacterEmotion.sad ||
         state.currentEmotion == CharacterEmotion.crying) {
       avatar = avatar
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: 4, end: 10, duration: 2000.ms, curve: Curves.easeInOut);
+          .moveY(begin: 4, end: 12, duration: 2000.ms, curve: Curves.easeInOut);
     } else {
-      // Natural idle breathing float & scale pulse
+      // Natural idle breathing float
       avatar = avatar
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: -10, end: 10, duration: 2200.ms, curve: Curves.easeInOutCubic)
-          .scale(begin: const Offset(1.0, 1.0), end: const Offset(1.025, 1.025), duration: 2200.ms, curve: Curves.easeInOutCubic);
+          .moveY(begin: -8, end: 8, duration: 2400.ms, curve: Curves.easeInOutCubic);
     }
 
-    return Center(
+    return Align(
+      alignment: const Alignment(0, 0.42),
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 60),
+        padding: const EdgeInsets.only(bottom: 30),
         child: avatar,
       ),
     );
