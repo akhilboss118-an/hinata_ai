@@ -131,9 +131,9 @@ class CharacterEngine extends ConsumerWidget {
 
   Widget _buildModelStage(CharacterState state) {
     Widget avatar = Image.asset(
-      'assets/images/hinata_character.png',
+      'assets/images/hinata_standing_idle.png',
       fit: BoxFit.contain,
-      height: 540,
+      height: 480,
     );
 
     // Dynamic micro-animations per character emotion state
@@ -148,23 +148,27 @@ class CharacterEngine extends ConsumerWidget {
         state.activeGesture == CharacterGesture.swipe) {
       avatar = avatar
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: -18, end: 0, duration: 550.ms, curve: Curves.easeOutCubic);
+          .moveY(begin: -14, end: 0, duration: 550.ms, curve: Curves.easeOutCubic);
+    } else if (state.isTalking) {
+      avatar = avatar
+          .animate(onPlay: (c) => c.repeat(reverse: true))
+          .moveY(begin: -8, end: 4, duration: 450.ms, curve: Curves.easeInOut);
     } else if (state.currentEmotion == CharacterEmotion.sad ||
         state.currentEmotion == CharacterEmotion.crying) {
       avatar = avatar
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: 4, end: 12, duration: 2000.ms, curve: Curves.easeInOut);
+          .moveY(begin: 4, end: 10, duration: 2000.ms, curve: Curves.easeInOut);
     } else {
-      // Natural idle breathing float
+      // Natural idle breathing float & scale pulse
       avatar = avatar
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: -8, end: 8, duration: 2400.ms, curve: Curves.easeInOutCubic);
+          .moveY(begin: -10, end: 10, duration: 2200.ms, curve: Curves.easeInOutCubic)
+          .scale(begin: const Offset(1.0, 1.0), end: const Offset(1.025, 1.025), duration: 2200.ms, curve: Curves.easeInOutCubic);
     }
 
-    return Align(
-      alignment: const Alignment(0, 0.42),
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 30),
+        padding: const EdgeInsets.only(bottom: 50),
         child: avatar,
       ),
     );
