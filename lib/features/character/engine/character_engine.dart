@@ -70,7 +70,7 @@ class CharacterEngine extends ConsumerWidget {
             // Transparent full-screen touch layer (Talking-Tom style hitboxes)
             Positioned.fill(
               child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
+                behavior: HitTestBehavior.translucent,
                 onTapDown: (details) {
                   if (!isInteractive) return;
                   final relativeY = details.localPosition.dy / constraints.maxHeight;
@@ -175,9 +175,9 @@ class CharacterEngine extends ConsumerWidget {
   }
 
   Widget _buildModelStage(CharacterState state) {
-    // Flutter web serves bundled assets under /assets/assets/...
+    // Web iframe requires absolute resolved URL so model-viewer loads from root
     final modelSrc = kIsWeb
-        ? 'assets/assets/models/hinata_anim.glb'
+        ? Uri.base.resolve('assets/assets/models/hinata_anim.glb').toString()
         : 'assets/models/hinata_anim.glb';
 
     return ModelViewer(
@@ -190,13 +190,13 @@ class CharacterEngine extends ConsumerWidget {
       cameraControls: false,
       disableZoom: true,
       interactionPrompt: InteractionPrompt.none,
-      cameraOrbit: '0deg 90deg 2.2m',
-      minCameraOrbit: '0deg 90deg 2.2m',
-      maxCameraOrbit: '0deg 90deg 2.2m',
-      fieldOfView: '32deg',
-      cameraTarget: 'auto auto auto',
-      exposure: 1.0,
-      shadowIntensity: 0.5,
+      cameraOrbit: '0deg 85deg 2.5m',
+      minCameraOrbit: '0deg 85deg 2.5m',
+      maxCameraOrbit: '0deg 85deg 2.5m',
+      fieldOfView: '30deg',
+      cameraTarget: '0m 0.8m 0m',
+      exposure: 1.1,
+      shadowIntensity: 0.6,
     );
   }
 
