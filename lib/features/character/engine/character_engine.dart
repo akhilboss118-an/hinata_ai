@@ -155,10 +155,10 @@ class CharacterEngine extends ConsumerWidget {
     Widget avatar = Image.asset(
       'assets/images/hinata_standing_idle.png',
       fit: BoxFit.contain,
-      height: 520,
+      height: 480,
     );
 
-    // Reactive micro-animations per emotion and gesture
+    // Dynamic micro-animations per emotion and gesture
     if (state.currentEmotion == CharacterEmotion.angry ||
         state.currentEmotion == CharacterEmotion.annoyed) {
       avatar = avatar
@@ -170,23 +170,22 @@ class CharacterEngine extends ConsumerWidget {
         state.activeGesture == CharacterGesture.swipe) {
       avatar = avatar
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: -18, end: 0, duration: 550.ms, curve: Curves.easeOutCubic);
+          .moveY(begin: -14, end: 0, duration: 550.ms, curve: Curves.easeOutCubic);
     } else if (state.currentEmotion == CharacterEmotion.sad ||
         state.currentEmotion == CharacterEmotion.crying) {
       avatar = avatar
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: 4, end: 12, duration: 2000.ms, curve: Curves.easeInOut);
+          .moveY(begin: 4, end: 10, duration: 2000.ms, curve: Curves.easeInOut);
     } else {
       // Natural idle breathing float
       avatar = avatar
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: -8, end: 8, duration: 2400.ms, curve: Curves.easeInOutCubic);
+          .moveY(begin: -6, end: 6, duration: 2400.ms, curve: Curves.easeInOutCubic);
     }
 
-    return Align(
-      alignment: const Alignment(0, 0.42),
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 30),
+        padding: const EdgeInsets.only(bottom: 60),
         child: avatar,
       ),
     );
