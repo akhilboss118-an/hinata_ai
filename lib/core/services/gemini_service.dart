@@ -36,7 +36,7 @@ class GeminiService {
 
   void _initModel() {
     _model = GenerativeModel(
-      model: 'gemini-3.6-flash',
+      model: 'gemini-1.5-flash',
       apiKey: apiKey,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',

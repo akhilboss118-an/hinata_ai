@@ -138,11 +138,12 @@ class CharacterEngine extends ConsumerWidget {
     if (gesture != null) {
       switch (gesture) {
         case CharacterGesture.headPat:
+        case CharacterGesture.hold:
         case CharacterGesture.cheekPoke:
         case CharacterGesture.noseTap:
-        case CharacterGesture.hold:
           return 'Reaction';
         case CharacterGesture.poke:
+          return state.currentEmotion == CharacterEmotion.annoyed ? 'Angry' : 'Reaction';
         case CharacterGesture.swipe:
         case CharacterGesture.tickle:
           return 'Excited';
@@ -163,10 +164,11 @@ class CharacterEngine extends ConsumerWidget {
       case CharacterEmotion.laughing:
       case CharacterEmotion.playful:
       case CharacterEmotion.affectionate:
+        return 'Excited';
       case CharacterEmotion.shy:
       case CharacterEmotion.embarrassed:
       case CharacterEmotion.surprised:
-        return 'Excited';
+        return 'Reaction';
       case CharacterEmotion.neutral:
       case CharacterEmotion.confused:
       case CharacterEmotion.thinking:
@@ -180,21 +182,23 @@ class CharacterEngine extends ConsumerWidget {
         ? Uri.base.resolve('assets/assets/models/hinata_anim.glb').toString()
         : 'assets/models/hinata_anim.glb';
 
+    final currentClip = _clipFor(state);
+
     return ModelViewer(
-      key: const ValueKey('hinata-3d-model'),
+      key: ValueKey('hinata-3d-model-$currentClip'),
       src: modelSrc,
       alt: 'Hinata 3D companion',
-      animationName: _clipFor(state),
+      animationName: currentClip,
       autoPlay: true,
       loading: Loading.eager,
       cameraControls: false,
       disableZoom: true,
       interactionPrompt: InteractionPrompt.none,
       scale: '100 100 100',
-      cameraOrbit: '0deg 75deg auto',
-      minCameraOrbit: 'auto auto auto',
-      maxCameraOrbit: 'auto auto auto',
-      cameraTarget: 'auto auto auto',
+      cameraOrbit: '0deg 82deg 2.4m',
+      minCameraOrbit: '0deg 82deg 2.4m',
+      maxCameraOrbit: '0deg 82deg 2.4m',
+      cameraTarget: '0m 0.35m 0m',
       fieldOfView: '30deg',
       exposure: 1.1,
       shadowIntensity: 0.6,
