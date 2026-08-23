@@ -164,56 +164,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ──────────────────────── SUBTITLE SPEECH BUBBLE ───────────────────────
 
   Widget _buildSubtitleBubble(String text) {
-    return Container(
-      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primaryLight.withValues(alpha: 0.40),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.60),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.25),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.chat_bubble_outline_rounded,
-              color: AppColors.primaryLight,
-              size: 14,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Flexible(
-            child: _TypewriterText(
-              key: ValueKey(text),
-              text: text,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                height: 1.35,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.1, end: 0, duration: 200.ms);
+    return _FadingSubtitleBubble(
+      key: ValueKey(text),
+      text: text,
+      onDismissed: () {
+        ref.read(characterControllerProvider.notifier).clearSpeech();
+      },
+    );
   }
 
   // ──────────────────── BOTTOM GLASS CHAT PANEL ──────────────────────
@@ -437,6 +394,129 @@ class _TypewriterTextState extends State<_TypewriterText> {
       style: widget.style,
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
+// ──────────────────────── FADING SUBTITLE BUBBLE ─────────────────────────
+
+class _FadingSubtitleBubble extends StatefulWidget {
+  final String text;
+  final VoidCallback? onDismissed;
+
+  const _FadingSubtitleBubble({
+    super.key,
+    required this.text,
+    this.onDismissed,
+  });
+
+  @override
+  State<_FadingSubtitleBubble> createState() => _FadingSubtitleBubbleState();
+}
+
+class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _opacityAnimation;
+  Timer? _dismissTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _opacityAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    );
+
+    _fadeController.forward();
+    _scheduleFadeOut();
+  }
+
+  @override
+  void didUpdateWidget(covariant _FadingSubtitleBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      _fadeController.forward();
+      _scheduleFadeOut();
+    }
+  }
+
+  void _scheduleFadeOut() {
+    _dismissTimer?.cancel();
+    // Visible for exactly 2 seconds, then smoothly fades away!
+    _dismissTimer = Timer(const Duration(milliseconds: 2000), () {
+      if (mounted) {
+        _fadeController.reverse().then((_) {
+          widget.onDismissed?.call();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _dismissTimer?.cancel();
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacityAnimation,
+      child: Container(
+        margin: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.82),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColors.primaryLight.withValues(alpha: 0.40),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.60),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.25),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: AppColors.primaryLight,
+                size: 14,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: _TypewriterText(
+                key: ValueKey(widget.text),
+                text: widget.text,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  height: 1.35,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

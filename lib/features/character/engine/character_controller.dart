@@ -162,6 +162,13 @@ class CharacterController extends StateNotifier<CharacterState> {
     });
   }
 
+  /// Clears the speech bubble text
+  void clearSpeech() {
+    if (mounted) {
+      state = state.copyWith(activeReactionText: null);
+    }
+  }
+
   @override
   void dispose() {
     _idleTimer?.cancel();
