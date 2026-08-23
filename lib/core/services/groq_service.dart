@@ -199,11 +199,15 @@ You MUST respond ONLY with valid JSON matching this schema:
     final minuteStr = now.minute.toString().padLeft(2, '0');
     final timeStr = "$hour:$minuteStr $period";
 
-    String replyText = "Enti ra em chesthunnav? Cheppu 😊";
+    String replyText = "Arey mowa, natho matladu! Em jargutundi cheppu 😊";
     CharacterEmotion emotion = CharacterEmotion.happy;
     String animation = 'talking';
 
-    if (lower.contains('time') || lower.contains('clock') || lower.contains('hour') || lower.contains('time eppudu') || lower.contains('eppudu')) {
+    if (lower.contains('nothing') || lower.contains('ntg') || lower.contains('khali') || lower.contains('khaali') || lower.contains('khale') || lower.contains('sitting') || lower.contains('em ledu') || lower.contains('emledu')) {
+      replyText = "Em leda? Bore kottesthundaa ra? Enno vishayalu unnayi matladadaniki! 😜";
+      emotion = CharacterEmotion.happy;
+      animation = 'talking';
+    } else if (lower.contains('time') || lower.contains('clock') || lower.contains('hour') || lower.contains('time eppudu') || lower.contains('eppudu')) {
       replyText = "Ippudu $timeStr ra! Ekkadiki veltunnav? ⏰";
       emotion = CharacterEmotion.surprised;
       animation = 'talking';
