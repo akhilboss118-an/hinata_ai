@@ -129,7 +129,8 @@ class CharacterController extends StateNotifier<CharacterState> {
       affectionLevel: newAffection,
     );
 
-    final int gestureDisplayMs = (2000 + (reactionText.length * 35)).clamp(2000, 5000);
+    final int len = reactionText.length;
+    final int gestureDisplayMs = len <= 35 ? 4000 : (4000 + (len - 35) * 45).clamp(4000, 7000);
     _reactionResetTimer = Timer(Duration(milliseconds: gestureDisplayMs), () {
       if (mounted) {
         state = state.copyWith(

@@ -432,11 +432,23 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
   void _scheduleFadeOut() {
     _dismissTimer?.cancel();
     
-    // Dynamic Reading Duration calculation:
-    // 1. Typing animation takes (length * 20ms)
-    // 2. Reading hold time: 2.0 seconds for short replies up to 5.0 - 6.0 seconds for long replies
+    // Typing animation duration (20ms per character)
     final int typingDurationMs = widget.text.length * 20;
-    final int readingDelayMs = (2000 + (widget.text.length * 35)).clamp(2000, 6000);
+
+    // Reading hold duration scaled by reply size:
+    // Short (<= 35 chars): 4.0 seconds
+    // Medium (36 - 85 chars): 4.0 to 6.0 seconds
+    // Long (>= 86 chars): 6.0 to 10.0 seconds (8 to 10s for full replies)
+    final int len = widget.text.length;
+    final int readingDelayMs;
+    if (len <= 35) {
+      readingDelayMs = 4000;
+    } else if (len <= 85) {
+      readingDelayMs = 4000 + ((len - 35) * 40);
+    } else {
+      readingDelayMs = (6000 + ((len - 85) * 55)).clamp(6000, 10000);
+    }
+
     final int totalDurationMs = typingDurationMs + readingDelayMs;
 
     _dismissTimer = Timer(Duration(milliseconds: totalDurationMs), () {
