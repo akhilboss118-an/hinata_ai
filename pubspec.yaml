@@ -19,8 +19,9 @@ dependencies:
   cloud_firestore: ^5.0.1
   google_sign_in: ^6.2.1
 
-  # AI Intelligence (Gemini Structured Outputs)
+  # AI Intelligence (Gemini & Groq APIs)
   google_generative_ai: ^0.4.5
+  http: ^1.2.1
 
   # 3D Model Rendering Viewport
   model_viewer_plus: ^1.8.0

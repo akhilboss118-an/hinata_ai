@@ -6,7 +6,14 @@ import '../models/conversation.dart';
 import '../../character/engine/character_controller.dart';
 import '../../character/models/character_emotion.dart';
 import '../../../core/services/gemini_service.dart';
+import '../../../core/services/groq_service.dart';
 import '../../../core/utils/date_utils.dart';
+
+final groqServiceProvider = Provider<GroqService>((ref) {
+  return GroqService(
+    apiKey: const String.fromEnvironment('GROQ_API_KEY'),
+  );
+});
 
 final geminiServiceProvider = Provider<GeminiService>((ref) {
   return GeminiService(
@@ -48,16 +55,19 @@ class ChatState {
 
 final chatControllerProvider =
     StateNotifierProvider<ChatController, ChatState>((ref) {
+  final groqService = ref.watch(groqServiceProvider);
   final geminiService = ref.watch(geminiServiceProvider);
   final charController = ref.watch(characterControllerProvider.notifier);
 
   return ChatController(
+    groqService: groqService,
     geminiService: geminiService,
     characterController: charController,
   );
 });
 
 class ChatController extends StateNotifier<ChatState> {
+  final GroqService _groqService;
   final GeminiService _geminiService;
   final CharacterController _charController;
   final Uuid _uuid = const Uuid();
@@ -68,9 +78,11 @@ class ChatController extends StateNotifier<ChatState> {
   final List<String> _localMemories = [];
 
   ChatController({
+    required GroqService groqService,
     required GeminiService geminiService,
     required CharacterController characterController,
-  })  : _geminiService = geminiService,
+  })  : _groqService = groqService,
+        _geminiService = geminiService,
         _charController = characterController,
         super(const ChatState());
 
@@ -130,12 +142,21 @@ class ChatController extends StateNotifier<ChatState> {
 
       final memories = _localMemories.take(5).toList();
 
-      // Request structured response from Gemini AI
-      final aiResponse = await _geminiService.generateCompanionResponse(
-        userMessage: text,
-        recentHistory: recentHistory,
-        memories: memories,
-      );
+      // Request structured response from Groq AI (or Gemini AI)
+      final GeminiCompanionResponse aiResponse;
+      if (_groqService.isConfigured) {
+        aiResponse = await _groqService.generateCompanionResponse(
+          userMessage: text,
+          recentHistory: recentHistory,
+          memories: memories,
+        );
+      } else {
+        aiResponse = await _geminiService.generateCompanionResponse(
+          userMessage: text,
+          recentHistory: recentHistory,
+          memories: memories,
+        );
+      }
 
       String targetAnimation = aiResponse.animation.isEmpty ? 'talking' : aiResponse.animation;
       CharacterEmotion targetEmotion = aiResponse.emotion;
