@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,8 @@ import 'package:hinata_ai/features/character/engine/character_controller.dart';
 import 'package:hinata_ai/features/character/engine/character_engine.dart';
 import 'package:hinata_ai/features/chat/controllers/chat_controller.dart';
 import 'widgets/side_menu_drawer.dart';
+
+import 'dart:js' as js;
 
 /// Stitch Homepage: transparent top bar, full-screen character stage with
 /// ethereal rings, and the glass-panel chat bar with AI Companion badge.
@@ -164,6 +167,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ──────────────────────── SUBTITLE SPEECH BUBBLE ───────────────────────
 
   Widget _buildSubtitleBubble(String text) {
+    if (kIsWeb) {
+      try {
+        js.context.callMethod('speakText', [text]);
+      } catch (e) {
+        debugPrint('TTS error: $e');
+      }
+    }
+
     return _FadingSubtitleBubble(
       key: ValueKey(text),
       text: text,
@@ -312,17 +323,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  bool _isListening = false;
+
   void _onMicPressed() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Voice input coming soon — Step 4',
-          style: GoogleFonts.inter(fontSize: 13),
+    if (kIsWeb) {
+      setState(() => _isListening = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '🎙️ Listening... Speak in Telugu or English!',
+            style: GoogleFonts.inter(fontSize: 13, color: Colors.white),
+          ),
+          backgroundColor: AppColors.primary,
+          duration: const Duration(seconds: 4),
         ),
-        backgroundColor: AppColors.surfaceCardHover,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+      );
+
+      try {
+        _startWebSpeechRecognition();
+      } catch (e) {
+        setState(() => _isListening = false);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Voice input is supported on Web browser!',
+            style: GoogleFonts.inter(fontSize: 13),
+          ),
+          backgroundColor: AppColors.surfaceCardHover,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _startWebSpeechRecognition() {
+    try {
+      final onResult = js.allowInterop((String result) {
+        if (mounted) {
+          setState(() {
+            _isListening = false;
+            _textController.text = result;
+            _hasText = true;
+          });
+          _sendMessage();
+        }
+      });
+
+      final onError = js.allowInterop((dynamic err) {
+        if (mounted) {
+          setState(() => _isListening = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Mic error: $err. Try typing or tap mic again!'),
+              backgroundColor: Colors.redAccent,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      });
+
+      js.context.callMethod('startSpeechRecognition', [onResult, onError]);
+    } catch (e) {
+      setState(() => _isListening = false);
+      debugPrint('Speech recognition error: $e');
+    }
   }
 }
 
