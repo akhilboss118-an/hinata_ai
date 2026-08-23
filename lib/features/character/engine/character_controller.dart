@@ -52,16 +52,8 @@ class CharacterController extends StateNotifier<CharacterState> {
       activeReactionText: speech,
     );
 
-    // Natural timing for gesture reactions before returning to idle
-    final anim = animation.toLowerCase();
-    int durationMs = 3200;
-    if (anim == 'sad' || anim == 'crying') {
-      durationMs = 4500;
-    } else if (anim == 'front_flip' || anim == 'flip') {
-      durationMs = 2800;
-    } else if (anim == 'wave_dance' || anim == 'dance') {
-      durationMs = 5000;
-    }
+    // Natural single-play timing for reactions before returning to idle
+    final int durationMs = _getAnimationDurationMs(animation);
 
     _reactionResetTimer = Timer(Duration(milliseconds: durationMs), () {
       if (mounted) {
@@ -71,6 +63,27 @@ class CharacterController extends StateNotifier<CharacterState> {
         );
       }
     });
+  }
+
+  /// Returns exact single-play duration in milliseconds so animations never loop multiple times
+  int _getAnimationDurationMs(String animation) {
+    final anim = animation.toLowerCase();
+    if (anim.contains('flip')) {
+      return 2160; // 1 single front twist flip
+    } else if (anim.contains('landing') || anim.contains('swing')) {
+      return 1850; // 1 single superhero swing landing
+    } else if (anim.contains('wave') || anim == 'hi' || anim == 'hello') {
+      return 1500; // 1 single wave
+    } else if (anim.contains('clap')) {
+      return 1200; // 1 single clap
+    } else if (anim.contains('disappoint')) {
+      return 4000;
+    } else if (anim == 'sad' || anim == 'crying') {
+      return 4500;
+    } else if (anim.contains('dance')) {
+      return 4500;
+    }
+    return 3000;
   }
 
   /// Handles Talking-Tom style interactive gesture triggers
@@ -130,9 +143,9 @@ class CharacterController extends StateNotifier<CharacterState> {
       affectionLevel: newAffection,
     );
 
-    final int len = reactionText.length;
-    final int gestureDisplayMs = len <= 35 ? 4000 : (4000 + (len - 35) * 45).clamp(4000, 7000);
-    _reactionResetTimer = Timer(Duration(milliseconds: gestureDisplayMs), () {
+    // Reset animation exactly once animation finishes playing
+    final int singlePlayDurationMs = _getAnimationDurationMs(animation);
+    _reactionResetTimer = Timer(Duration(milliseconds: singlePlayDurationMs), () {
       if (mounted) {
         state = state.copyWith(
           activeGesture: null,
