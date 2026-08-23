@@ -64,7 +64,7 @@ You MUST respond ONLY with valid JSON matching this schema:
 {
   "reply": "string (your 100% English response following all rules above)",
   "emotion": "neutral | happy | excited | laughing | sad | crying | angry | annoyed | shy | embarrassed | surprised | thinking",
-  "animation": "wave | clap | talking | disappointed | sad | idle",
+  "animation": "wave | clap | talking | disappointed | sad | idle | thinking | front_flip | swing_landing | wave_dance",
   "intensity": 0.8
 }
 ''';

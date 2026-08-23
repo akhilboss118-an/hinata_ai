@@ -143,9 +143,17 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
     String modelPath;
     final anim = state.currentAnimation.toLowerCase();
 
-    if (anim == 'wave' || anim == 'waving' || anim == 'hi' || anim == 'hello') {
+    if (state.isThinking || anim == 'thinking' || anim == 'think' || anim == 'ponder') {
+      modelPath = 'assets/models/thinking.glb';
+    } else if (anim == 'dance' || anim == 'wave_dance' || anim == 'hiphop' || anim == 'celebrate') {
+      modelPath = 'assets/models/wave_dance.glb';
+    } else if (anim == 'front_flip' || anim == 'flip' || anim == 'jump' || anim == 'acrobatic' || anim == 'happybounce') {
+      modelPath = 'assets/models/front_flip.glb';
+    } else if (anim == 'swing_landing' || anim == 'landing' || anim == 'crouch' || anim == 'hero_landing') {
+      modelPath = 'assets/models/swing_landing.glb';
+    } else if (anim == 'wave' || anim == 'waving' || anim == 'hi' || anim == 'hello') {
       modelPath = 'assets/models/waving_gesture.glb';
-    } else if (anim == 'clap' || anim == 'clapping' || anim == 'happy' || anim == 'excited') {
+    } else if (anim == 'clap' || anim == 'clapping' || anim == 'cheer') {
       modelPath = 'assets/models/clapping.glb';
     } else if (anim == 'disappointed' || anim == 'annoyed' || anim == 'pout' || anim == 'disappoint' || state.currentEmotion == CharacterEmotion.annoyed) {
       modelPath = 'assets/models/disappointed.glb';

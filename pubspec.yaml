@@ -51,6 +51,10 @@ flutter:
     - assets/models/disappointed.glb
     - assets/models/talking.glb
     - assets/models/talking_1.glb
+    - assets/models/wave_dance.glb
+    - assets/models/thinking.glb
+    - assets/models/front_flip.glb
+    - assets/models/swing_landing.glb
     - assets/models/
     - assets/videos/
     - assets/images/

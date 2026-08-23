@@ -19,16 +19,19 @@ class CharacterController extends StateNotifier<CharacterState> {
     _startNaturalIdleLoop();
   }
 
-  /// Sets character into Thinking state when AI is generating a reply
-  void setThinking(bool isThinking) {
-    if (isThinking) {
+  ///  /// Updates the thinking state when AI is generating responses
+  void setThinking(bool thinking) {
+    if (thinking) {
+      _reactionResetTimer?.cancel();
       state = state.copyWith(
         isThinking: true,
-        currentEmotion: CharacterEmotion.thinking,
         currentAnimation: 'thinking',
       );
     } else {
-      state = state.copyWith(isThinking: false);
+      state = state.copyWith(
+        isThinking: false,
+        currentAnimation: 'idle',
+      );
     }
   }
 
@@ -54,6 +57,10 @@ class CharacterController extends StateNotifier<CharacterState> {
     int durationMs = 3200;
     if (anim == 'sad' || anim == 'crying') {
       durationMs = 4500;
+    } else if (anim == 'front_flip' || anim == 'flip') {
+      durationMs = 2800;
+    } else if (anim == 'wave_dance' || anim == 'dance') {
+      durationMs = 5000;
     }
 
     _reactionResetTimer = Timer(Duration(milliseconds: durationMs), () {
@@ -80,17 +87,17 @@ class CharacterController extends StateNotifier<CharacterState> {
       case CharacterGesture.headPat:
         reactionEmotion = CharacterEmotion.happy;
         reactionText = 'Hey, thank you! Always great hanging out with you.';
-        animation = 'smile';
+        animation = 'wave';
         break;
       case CharacterGesture.cheekPoke:
-        reactionEmotion = CharacterEmotion.happy;
-        reactionText = 'Spider-Man at your service! How can I help you today?';
-        animation = 'smile';
+        reactionEmotion = CharacterEmotion.excited;
+        reactionText = 'Superhero landing! Spider-Man at your service.';
+        animation = 'swing_landing';
         break;
       case CharacterGesture.noseTap:
-        reactionEmotion = CharacterEmotion.surprised;
-        reactionText = 'Whoa! Spider-sense is tingling. What is up?';
-        animation = 'surprised';
+        reactionEmotion = CharacterEmotion.thinking;
+        reactionText = 'Whoa! Spider-sense is tingling. What is on your mind?';
+        animation = 'thinking';
         break;
       case CharacterGesture.poke:
         reactionEmotion = CharacterEmotion.happy;
@@ -98,19 +105,19 @@ class CharacterController extends StateNotifier<CharacterState> {
         animation = 'talking';
         break;
       case CharacterGesture.hold:
-        reactionEmotion = CharacterEmotion.happy;
+        reactionEmotion = CharacterEmotion.excited;
         reactionText = 'I have got your back! Let us get things done.';
-        animation = 'warmSmile';
+        animation = 'clap';
         break;
       case CharacterGesture.swipe:
         reactionEmotion = CharacterEmotion.excited;
-        reactionText = 'Ready for action! What is next on our list?';
-        animation = 'happyBounce';
+        reactionText = 'Acrobatic flip! Ready for action, what is next?';
+        animation = 'front_flip';
         break;
       case CharacterGesture.tickle:
-        reactionEmotion = CharacterEmotion.laughing;
-        reactionText = 'Haha, hey easy on the suit! What do you need?';
-        animation = 'laugh';
+        reactionEmotion = CharacterEmotion.happy;
+        reactionText = 'Check out these moves! Let us make things happen.';
+        animation = 'wave_dance';
         break;
     }
 
