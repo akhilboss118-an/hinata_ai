@@ -10,9 +10,7 @@ import '../../../core/services/groq_service.dart';
 import '../../../core/utils/date_utils.dart';
 
 final groqServiceProvider = Provider<GroqService>((ref) {
-  return GroqService(
-    apiKey: const String.fromEnvironment('GROQ_API_KEY'),
-  );
+  return GroqService();
 });
 
 final geminiServiceProvider = Provider<GeminiService>((ref) {
