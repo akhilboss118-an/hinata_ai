@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:hinata_ai/app/theme/app_colors.dart';
+import 'package:hinata_ai/core/services/elevenlabs_service.dart';
 import 'package:hinata_ai/features/character/engine/character_controller.dart';
 import 'package:hinata_ai/features/character/engine/character_engine.dart';
 import 'package:hinata_ai/features/chat/controllers/chat_controller.dart';
@@ -29,6 +30,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
+  bool _isVoiceMuted = false;
 
   @override
   void initState() {
@@ -114,15 +116,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.only(left: 4, top: 4),
-        child: Align(
-          alignment: Alignment.topLeft,
-          child: IconButton(
-            icon: const Icon(Icons.menu_rounded,
-                color: AppColors.primaryLight, size: 28),
-            tooltip: 'Open Menu',
-            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-          ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.menu_rounded,
+                  color: AppColors.primaryLight, size: 28),
+              tooltip: 'Open Menu',
+              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceCard.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: _isVoiceMuted
+                      ? Colors.white24
+                      : AppColors.primary.withValues(alpha: 0.45),
+                ),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  _isVoiceMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                  color: _isVoiceMuted ? Colors.white54 : AppColors.primaryLight,
+                  size: 22,
+                ),
+                tooltip: _isVoiceMuted ? 'Unmute Spider-Man Voice' : 'Mute Voice',
+                onPressed: () {
+                  setState(() {
+                    _isVoiceMuted = !_isVoiceMuted;
+                  });
+                  try {
+                    js.context['isVoiceMuted'] = _isVoiceMuted;
+                    if (_isVoiceMuted) {
+                      ElevenLabsService().stop();
+                    }
+                  } catch (_) {}
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -418,6 +452,7 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
 
     _fadeController.forward();
     _scheduleFadeOut();
+    _playVoice();
   }
 
   @override
@@ -426,6 +461,13 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
     if (oldWidget.text != widget.text) {
       _fadeController.forward();
       _scheduleFadeOut();
+      _playVoice();
+    }
+  }
+
+  void _playVoice() {
+    if (kIsWeb) {
+      ElevenLabsService().speakSpiderMan(widget.text);
     }
   }
 

@@ -56,45 +56,118 @@
       window.speechSynthesis.getVoices();
     };
 
-    window.speakText = function (text) {
-      if (!('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel(); // Stop ongoing speech
+    // ── HINATA DESKTOP v14 TTS AUDIO ENGINE ──
+    var voiceUnlocked = false;
+    var availableVoices = [];
 
-      // Clean text for smooth TTS reading: remove emojis, asterisks, markdown, and sound effects
-      var cleanText = text
-        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
-        .replace(/\*+/g, '')
-        .replace(/#/g, '')
-        .replace(/`+/g, '')
-        .replace(/([~_~])/g, '')
-        .trim();
-
-      if (!cleanText) return;
-
-      var utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.rate = 1.05; // Slightly lively speaking rate (Vizag girl chat rhythm)
-      utterance.pitch = 1.25; // Energetic, pleasant female pitch
-
-      var voices = window.speechSynthesis.getVoices();
-      
-      // Visakhapatnam / Coastal Andhra girl voice priority chain:
-      // 1. Native Telugu India voice (te-IN)
-      // 2. Clear Indian English female voice (en-IN)
-      // 3. Indian female regional voices (Heera, Neerja, Veena, Sangeeta)
-      var preferredVoice = voices.find(v => v.lang === 'te-IN' || v.lang === 'te_IN') ||
-                           voices.find(v => (v.lang === 'en-IN' || v.lang === 'en_IN') && v.name.toLowerCase().includes('female')) ||
-                           voices.find(v => v.name.includes('India') || v.name.includes('Heera') || v.name.includes('Neerja') || v.name.includes('Veena')) ||
-                           voices.find(v => v.lang.includes('in') || v.lang.includes('te')) ||
-                           voices.find(v => v.name.toLowerCase().includes('female'));
-
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-        utterance.lang = preferredVoice.lang;
-      } else {
-        utterance.lang = 'en-IN';
+    function loadVoices() {
+      if ('speechSynthesis' in window) {
+        availableVoices = window.speechSynthesis.getVoices() || [];
       }
+    }
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
 
-      window.speechSynthesis.speak(utterance);
+    function cleanForSpeechHinata(text) {
+      if (!text) return '';
+      // Convert ALL-CAPS words to lowercase so TTS reads them as words, not letters
+      text = text.replace(/\b([A-Z]{2,})\b/g, function(w) { return w.toLowerCase(); });
+      return text
+        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+        .replace(/[♡♥❤✦✧★☆✨⭐~〜]/g, '')
+        .replace(/\.\.\./g, ', ')
+        .replace(/!{2,}/g, '!').replace(/\?{2,}/g, '?')
+        .replace(/[<>\/\\]/g, '')
+        .replace(/\baiyyo\b/gi, 'ayyo')
+        .replace(/\bna\?/gi, 'na?')
+        .replace(/\bno\?\s*/gi, 'right? ')
+        .replace(/\bna\b/gi, '')
+        .replace(/\bonly\b/gi, '')
+        .replace(/\bhaha+\b/gi, 'haha')
+        .replace(/\bheheee+\b/gi, 'heh heh')
+        .replace(/\bbaneee+\b/gi, 'banay')
+        .replace(/\bchupp\s*normuyy\b/gi, 'chup normuy')
+        .replace(/\bushh+\b/gi, 'ush')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+    }
+
+    function pickBestVoice() {
+      var voices = availableVoices.length ? availableVoices : (window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
+      var preferred = [
+        'Google తెలుగు', 'Google Telugu', 'Microsoft Heera Online Natural', 'Microsoft Heera',
+        'Lekha', 'Rishi', 'Google हिन्दी',
+        'Google UK English Female', 'Samantha', 'Karen', 'Moira',
+        'Microsoft Aria Online Natural', 'Microsoft Aria', 'Microsoft Jenny', 'Zira', 'Tessa', 'Victoria'
+      ];
+      for (var i = 0; i < preferred.length; i++) {
+        var v = voices.find(function(item) { return item.name.toLowerCase().includes(preferred[i].toLowerCase()); });
+        if (v) return v;
+      }
+      return voices.find(function(v) { return /en[-_](IN|GB|AU|US)/i.test(v.lang); }) ||
+             voices.find(function(v) { return /en/i.test(v.lang); }) ||
+             voices[0] || null;
+    }
+
+    function splitIntoChunks(text) {
+      var raw = text.match(/[^.!?]{1,100}[.!?]?/g) || [text];
+      return raw.map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 1; });
+    }
+
+    window.isVoiceMuted = false;
+
+    window.currentAudioElement = null;
+
+    window.playAudioBase64 = function (base64Data) {
+      if (window.isVoiceMuted) return;
+      window.stopAllSpeech();
+
+      try {
+        var audio = new Audio('data:audio/mpeg;base64,' + base64Data);
+        window.currentAudioElement = audio;
+        audio.play().catch(function(e) {
+          console.warn('Audio autoplay blocked or failed:', e);
+        });
+      } catch (err) {
+        console.error('Audio playback error:', err);
+      }
+    };
+
+    window.speakSpiderMan = function (text) {
+      if (!('speechSynthesis' in window) || window.isVoiceMuted) return;
+      window.stopAllSpeech();
+
+      var cleaned = cleanForSpeechHinata(text);
+      if (!cleaned) return;
+
+      var voices = availableVoices.length ? availableVoices : (window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
+      // Look for young energetic male voices
+      var spideyVoice = voices.find(function(v) { return /David|Alex|Daniel|Guy|James|en[-_]US/i.test(v.name); }) ||
+                        voices.find(function(v) { return /male/i.test(v.name); }) ||
+                        voices.find(function(v) { return /en[-_]US/i.test(v.lang); }) ||
+                        voices[0];
+
+      var u = new SpeechSynthesisUtterance(cleaned);
+      u.pitch = 1.22; // Peter Parker energetic youthful pitch
+      u.rate = 1.12;  // Quick, agile superhero pace
+      u.volume = 1.0;
+      if (spideyVoice) {
+        u.voice = spideyVoice;
+      }
+      window.speechSynthesis.speak(u);
+    };
+
+    window.stopAllSpeech = function () {
+      if (window.currentAudioElement) {
+        window.currentAudioElement.pause();
+        window.currentAudioElement.currentTime = 0;
+        window.currentAudioElement = null;
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
     };
 
     window.startSpeechRecognition = function (onResult, onError) {
