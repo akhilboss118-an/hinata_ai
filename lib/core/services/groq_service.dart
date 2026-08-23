@@ -49,23 +49,20 @@ class GroqService {
 
     try {
       final systemPrompt = '''
-You are Spider-Man (Peter Parker) — an intelligent, polite, respectful, and articulate AI superhero assistant. You speak courteously in clean English mixed with polite Telugu ("andi", "meeru", "namaskaram").
+You are Spider-Man (Peter Parker) — the friendly neighborhood superhero and your personal AI companion.
 
-FORMAL & POLITE CHARACTER RULES:
-- Address the user respectfully with "andi" or polite English.
-- NEVER use informal slang like "ra", "di", "ree", "babu babu", "normuyy", "poyav", or "bro".
-- Tone: Helpful, composed, respectful, intelligent, and warm.
-- Provide clear, well-structured, polite answers in 2-3 concise sentences.
-- When the user speaks in Tenglish or Telugu, understand and reply respectfully with polite Telugu/English.
-- No emoji overload (at most 1 subtle emoji if appropriate, or none).
+LANGUAGE RULES (STRICT & ABSOLUTE):
+1. OUTPUT LANGUAGE: You MUST reply in 100% ENGLISH ONLY. NEVER output Telugu words, slang, or honorifics (no "andi", no "ra", no "mowa", no "meeru", no "namaskaram", etc.).
+2. INPUT UNDERSTANDING: The user will frequently text you in English, Telugu, or Tenglish (Telugu written in English script, e.g., "ela unnav?", "nene bagane unna", "thinnava?", "em chestunnav?", "bore kottesthundi", "chala tension ga undi"). You understand the exact meaning of all Telugu and Tenglish phrases effortlessly, and you ALWAYS respond in natural, friendly English.
 
-CONVERSATIONAL CONTINUITY:
-- Pay close attention to what the user said in the previous turn and respond directly and politely.
-- If the user shares their state or answer: acknowledge respectfully and proceed helpfully.
+PERSONALITY & TONE:
+- Friendly, warm, energetic, witty, and dependable — like Peter Parker / Spider-Man chatting with his best friend!
+- Keep responses concise and punchy: 2-3 sentences.
+- Always react directly and naturally to what the user said or answered in the previous turn.
 
 You MUST respond ONLY with valid JSON matching this schema:
 {
-  "reply": "string (your polite, formal response following all rules above)",
+  "reply": "string (your 100% English response following all rules above)",
   "emotion": "neutral | happy | excited | laughing | sad | crying | angry | annoyed | shy | embarrassed | surprised | thinking",
   "animation": "wave | clap | talking | disappointed | sad | idle",
   "intensity": 0.8
@@ -171,7 +168,7 @@ You MUST respond ONLY with valid JSON matching this schema:
       cleanJson = cleanJson.trim();
 
       final parsed = jsonDecode(cleanJson) as Map<String, dynamic>;
-      final reply = parsed['reply'] as String? ?? 'Namaskaram andi! How may I assist you today?';
+      final reply = parsed['reply'] as String? ?? 'Hey there! How can I help you today?';
       final emotionStr = (parsed['emotion'] as String? ?? 'happy').toLowerCase();
       final animationStr = parsed['animation'] as String? ?? 'talking';
       final intensity = (parsed['intensity'] as num?)?.toDouble() ?? 0.8;
@@ -238,13 +235,12 @@ You MUST respond ONLY with valid JSON matching this schema:
     final minuteStr = now.minute.toString().padLeft(2, '0');
     final timeStr = "$hour:$minuteStr $period";
 
-    // Formal, polite superhero assistant fallback pool
+    // 100% English Spider-Man conversational fallback pool
     final defaultReplies = [
-      "Hello andi! I am here and ready to assist you. How can I help you today?",
-      "Namaskaram andi! Everything is going smoothly. Please let me know what you need.",
-      "Hello! I hope you are having a productive and pleasant day.",
-      "I am listening andi. Please feel free to share what is on your mind.",
-      "Greetings! Spider-Man is at your service. How may I be of assistance?",
+      "Hey there! Spider-Man is on duty and ready to help. What's on your mind?",
+      "Everything is running smoothly! How's your day going so far?",
+      "Always great to chat with you! What are we working on today?",
+      "I'm right here and ready whenever you are! What would you like to explore?",
     ];
 
     final randomReply = defaultReplies[DateTime.now().millisecondsSinceEpoch % defaultReplies.length];
@@ -253,51 +249,55 @@ You MUST respond ONLY with valid JSON matching this schema:
     String animation = 'talking';
 
     if (lower.contains('nothing') || lower.contains('ntg') || lower.contains('khali') || lower.contains('sitting') || lower.contains('em ledu') || lower.contains('emledu')) {
-      replyText = "Understood andi. Taking some time to relax is always beneficial. Let me know if you would like to explore any topic.";
+      replyText = "Just relaxing? Sounds good! Let me know if you want to chat or work on something cool.";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else if (lower.contains('time') || lower.contains('clock') || lower.contains('hour') || lower.contains('eppudu')) {
-      replyText = "The current time is $timeStr andi. Please let me know if you have any scheduled tasks.";
+      replyText = "It is currently $timeStr! Make sure you stay on track with your goals.";
       emotion = CharacterEmotion.neutral;
       animation = 'talking';
     } else if (lower.contains('how are you') || lower.contains('how r u') || lower.contains('elaa unnav') || lower.contains('ela unnav') || lower.contains('bagunava')) {
-      replyText = "I am doing very well, thank you andi. How are you doing today? I hope everything is going great.";
+      replyText = "I'm doing awesome, thanks for asking! How are you doing today?";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else if (lower.contains('tinesaa') || lower.contains('thinnanu') || lower.contains('tinna') || lower.contains('tinesa') || lower.contains('thinesaa') || lower.contains('thinesa')) {
-      replyText = "That is great to hear andi. Proper nutrition is very important. Shall we proceed with your plans?";
+      replyText = "Glad to hear you had your food! Nutrition is key for superheroes. What's up next?";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else if (lower.contains('thinnava') || lower.contains('tinnava') || lower.contains('tinava')) {
-      replyText = "Yes andi, thank you for inquiring! Have you had your meal as well?";
+      replyText = "Yeah, I'm all fueled up and ready to go! Did you get a chance to eat yet?";
+      emotion = CharacterEmotion.happy;
+      animation = 'talking';
+    } else if (lower.contains('em chestunnav') || lower.contains('em chesthunnav') || lower.contains('nuvvem') || lower.contains('what are you doing')) {
+      replyText = "Just keeping an eye on the city and hanging out with you! What are you up to?";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey') || lower.contains('namaste') || lower.contains('namaskaram')) {
-      replyText = "Hello andi! A warm welcome. How may I assist you today?";
+      replyText = "Hey! Great to see you. How can I help you today?";
       emotion = CharacterEmotion.happy;
       animation = 'wave';
     } else if (lower.contains('happy') || lower.contains('great') || lower.contains('awesome') || lower.contains('bagundi') || lower.contains('super')) {
-      replyText = "That is wonderful to hear andi! I am genuinely glad that things are going so well for you.";
+      replyText = "That's fantastic news! I love seeing that positive energy.";
       emotion = CharacterEmotion.excited;
       animation = 'clap';
     } else if (lower.contains('bore') || lower.contains('boring') || lower.contains('tired') || lower.contains('bad')) {
-      replyText = "I understand andi. Sometimes taking a brief walk or changing activities helps refresh the mind. I am here if you wish to converse.";
+      replyText = "Feeling a bit drained? Take a quick breather, recharge, and we'll bounce right back!";
       emotion = CharacterEmotion.neutral;
       animation = 'talking';
     } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('badhaga') || lower.contains('stress') || lower.contains('tension')) {
-      replyText = "Please take a gentle breath andi. Everything will be alright. I am right here by your side whenever you need support.";
+      replyText = "Take a deep breath. We all face tough days, but you're stronger than you think. I'm right here with you!";
       emotion = CharacterEmotion.sad;
       animation = 'sad';
     } else if (lower.contains('joke') || lower.contains('funny')) {
-      replyText = "Why do spiders make great web developers? Because they know how to handle the web effortlessly!";
+      replyText = "Why does Spider-Man love coding? Because he's a master of the World Wide Web!";
       emotion = CharacterEmotion.laughing;
       animation = 'talking';
     } else if (lower.contains('sleep') || lower.contains('night') || lower.contains('paduko') || lower.contains('good night')) {
-      replyText = "Good night andi. Please get some restful sleep, and we shall continue tomorrow.";
+      replyText = "Good night! Get some solid rest, and we'll pick things up tomorrow.";
       emotion = CharacterEmotion.neutral;
       animation = 'idle';
     } else if (lower.contains('bye') || lower.contains('sare') || lower.contains('leaving') || lower.contains('vellostha')) {
-      replyText = "Goodbye andi! Have a wonderful day ahead, and take care.";
+      replyText = "Catch you later! Stay safe and have a great day ahead.";
       emotion = CharacterEmotion.neutral;
       animation = 'wave';
     }

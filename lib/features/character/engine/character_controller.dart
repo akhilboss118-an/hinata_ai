@@ -79,37 +79,37 @@ class CharacterController extends StateNotifier<CharacterState> {
     switch (gesture) {
       case CharacterGesture.headPat:
         reactionEmotion = CharacterEmotion.happy;
-        reactionText = 'Hello andi! Thank you, it is a pleasure interacting with you.';
+        reactionText = 'Hey, thank you! Always great hanging out with you.';
         animation = 'smile';
         break;
       case CharacterGesture.cheekPoke:
         reactionEmotion = CharacterEmotion.happy;
-        reactionText = 'Spider-Man at your service andi! How may I assist you?';
+        reactionText = 'Spider-Man at your service! How can I help you today?';
         animation = 'smile';
         break;
       case CharacterGesture.noseTap:
         reactionEmotion = CharacterEmotion.surprised;
-        reactionText = 'Greetings andi! I am alert and ready for your commands.';
+        reactionText = 'Whoa! Spider-sense is tingling. What is up?';
         animation = 'surprised';
         break;
       case CharacterGesture.poke:
         reactionEmotion = CharacterEmotion.happy;
-        reactionText = 'Hello andi! Please let me know what you would like to discuss.';
+        reactionText = 'Hey there! What are you working on today?';
         animation = 'talking';
         break;
       case CharacterGesture.hold:
         reactionEmotion = CharacterEmotion.happy;
-        reactionText = 'Thank you andi. I appreciate our collaboration today.';
+        reactionText = 'I have got your back! Let us get things done.';
         animation = 'warmSmile';
         break;
       case CharacterGesture.swipe:
         reactionEmotion = CharacterEmotion.excited;
-        reactionText = 'Ready for action andi! Please feel free to ask anything.';
+        reactionText = 'Ready for action! What is next on our list?';
         animation = 'happyBounce';
         break;
       case CharacterGesture.tickle:
         reactionEmotion = CharacterEmotion.laughing;
-        reactionText = 'Haha, very lively andi! Let us see what we can accomplish today.';
+        reactionText = 'Haha, hey easy on the suit! What do you need?';
         animation = 'laugh';
         break;
     }
