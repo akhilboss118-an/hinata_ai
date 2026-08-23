@@ -80,6 +80,8 @@ class CharacterController extends StateNotifier<CharacterState> {
       return 4000;
     } else if (anim == 'sad' || anim == 'crying') {
       return 4500;
+    } else if (anim.contains('think')) {
+      return 2500; // 1 smooth thinking stance
     } else if (anim.contains('dance')) {
       return 4500;
     }

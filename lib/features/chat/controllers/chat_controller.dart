@@ -155,6 +155,8 @@ class ChatController extends StateNotifier<ChatState> {
 
       final memories = _localMemories.take(5).toList();
 
+      final stopwatch = Stopwatch()..start();
+
       // Request structured response from Groq AI (or Gemini AI)
       final GeminiCompanionResponse aiResponse;
       if (_groqService.isConfigured) {
@@ -169,6 +171,12 @@ class ChatController extends StateNotifier<ChatState> {
           recentHistory: recentHistory,
           memories: memories,
         );
+      }
+
+      // Smooth Thinking buffer: ensure thinking animation plays cleanly for at least 1.2s without rapid flickering
+      final int elapsed = stopwatch.elapsedMilliseconds;
+      if (elapsed < 1200) {
+        await Future.delayed(Duration(milliseconds: 1200 - elapsed));
       }
 
       // Trust AI-chosen animation & emotion first — only override if AI returned empty/idle
