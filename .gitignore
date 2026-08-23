@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Heavy 3D Source FBX Files (GLBs are used in Flutter runtime)
+*.fbx
+*.fbm/
