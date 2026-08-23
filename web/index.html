@@ -51,18 +51,53 @@
   </script>
   <!-- Web Speech API Helpers for STT & TTS -->
   <script>
+    // Ensure voices are loaded asynchronously in Chrome/Safari
+    window.speechSynthesis.onvoiceschanged = function() {
+      window.speechSynthesis.getVoices();
+    };
+
     window.speakText = function (text) {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel(); // Stop ongoing speech
-      var utterance = new SpeechSynthesisUtterance(text);
+
+      // Clean text for smooth TTS reading: remove emojis, asterisks, markdown, and sound effects
+      var cleanText = text
+        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+        .replace(/\*+/g, '')
+        .replace(/#/g, '')
+        .replace(/`+/g, '')
+        .replace(/([~_~])/g, '')
+        .trim();
+
+      if (!cleanText) return;
+
+      var utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.rate = 1.0;
-      utterance.pitch = 1.1; // Slightly higher pitch for female voice
-      
-      // Select best voice (prefer female or Indian English / Telugu if available)
+      utterance.pitch = 1.15; // Natural pleasant pitch for Hinata
+
       var voices = window.speechSynthesis.getVoices();
-      var selectedVoice = voices.find(v => v.lang.includes('te') || v.lang.includes('in') || v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('google'));
-      if (selectedVoice) utterance.voice = selectedVoice;
       
+      // Smart voice picker: look for natural Indian English / Telugu female voices first
+      var preferredVoice = voices.find(v => (
+        v.lang === 'te-IN' || 
+        v.lang === 'en-IN' || 
+        v.name.includes('India') || 
+        v.name.includes('Heera') || 
+        v.name.includes('Neerja') || 
+        v.name.includes('Veena') ||
+        v.name.includes('Google हिन्दी') ||
+        v.name.includes('Google UK English Female') ||
+        v.name.includes('Zira')
+      ));
+
+      if (!preferredVoice) {
+        preferredVoice = voices.find(v => v.name.toLowerCase().includes('female') || v.lang.includes('en'));
+      }
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
       window.speechSynthesis.speak(utterance);
     };
 
@@ -75,7 +110,8 @@
       var recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'te-IN'; // Default to Telugu India recognition, fallback accepts English/Tanglish
+      // 'en-IN' & 'te-IN' dual recognition support
+      recognition.lang = (navigator.language && navigator.language.includes('te')) ? 'te-IN' : 'en-IN';
 
       recognition.onresult = function (event) {
         var transcript = event.results[0][0].transcript;
