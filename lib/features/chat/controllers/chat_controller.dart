@@ -225,7 +225,7 @@ class ChatController extends StateNotifier<ChatState> {
           errStr.contains('offline') ||
           errStr.contains('failed to host') ||
           errStr.contains('clientexception')) {
-        fallbackText = "Arey mowa, check your internet connection ra! 🌐 status offline";
+        fallbackText = "Arey mowa, signal/net sarriga ledu darka! Check your internet connection ra 🌐";
       } else {
         fallbackText = "I think I missed something, can you repeat again? 😊";
       }
