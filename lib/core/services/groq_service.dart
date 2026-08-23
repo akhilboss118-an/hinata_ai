@@ -166,7 +166,32 @@ You MUST respond ONLY with valid JSON matching this schema:
         final content = data['choices'][0]['message']['content'];
         return _parseJsonOutput(content);
       } else {
-        debugPrint('Groq API error: ${response.statusCode} - ${response.body}');
+        debugPrint('Groq API error ${response.statusCode}: ${response.body}');
+        
+        // Auto-switch to ultra-fast 8B model if 70B hits 429 Rate Limit!
+        if (response.statusCode == 429 || response.statusCode >= 500) {
+          debugPrint('Switching to fallback Groq model: llama-3.1-8b-instant');
+          final fallbackResponse = await http.post(
+            Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+            headers: {
+              'Authorization': 'Bearer $apiKey',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'model': 'llama-3.1-8b-instant',
+              'messages': messages,
+              'temperature': 0.7,
+              'response_format': {'type': 'json_object'},
+            }),
+          );
+
+          if (fallbackResponse.statusCode == 200) {
+            final data = jsonDecode(fallbackResponse.body);
+            final content = data['choices'][0]['message']['content'];
+            return _parseJsonOutput(content);
+          }
+        }
+
         return _getFallbackResponse(userMessage);
       }
     } catch (e) {
