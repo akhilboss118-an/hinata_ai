@@ -103,21 +103,6 @@ class CharacterEngine extends ConsumerWidget {
                 },
               ),
             ),
-
-            // Dynamic Reaction / Speech Bubble (Appears directly above character head)
-            if (characterState.activeReactionText != null)
-              Positioned(
-                top: constraints.maxHeight * 0.14,
-                left: 28,
-                right: 28,
-                child: _buildSpeechBubble(
-                  characterState.activeReactionText!,
-                  characterState.currentEmotion,
-                )
-                    .animate()
-                    .fadeIn(duration: 200.ms)
-                    .slideY(begin: 0.15, end: 0, duration: 250.ms),
-              ),
           ],
         );
       },
