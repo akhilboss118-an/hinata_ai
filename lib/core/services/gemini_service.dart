@@ -69,22 +69,7 @@ You MUST respond ALWAYS in valid JSON matching this exact schema:
     List<String> memories = const [],
   }) async {
     if (_model == null) {
-      final lower = userMessage.trim().toLowerCase();
-      String replyText = "I'm right here with you! Tell me more ✨";
-      if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey')) {
-        replyText = "Hii! 👋 Great to see you! How are you doing today?";
-      } else if (lower.contains('happy') || lower.contains('clap')) {
-        replyText = "Yay! I'm so happy for you! 🎉";
-      } else if (lower.contains('sad')) {
-        replyText = "I'm here for you... Everything is going to be okay ❤️";
-      }
-
-      return GeminiCompanionResponse(
-        reply: replyText,
-        emotion: CharacterEmotion.happy,
-        animation: 'smile',
-        intensity: 0.8,
-      );
+      return _getSmartResponse(userMessage);
     }
 
     try {
@@ -113,36 +98,72 @@ You MUST respond ALWAYS in valid JSON matching this exact schema:
 
       final rawText = response.text;
       if (rawText == null || rawText.isEmpty) {
-        return const GeminiCompanionResponse(
-          reply: "I'm right here with you! Tell me more ✨",
-        );
+        return _getSmartResponse(userMessage);
       }
 
       return _parseJsonOutput(rawText);
     } catch (e) {
       debugPrint('GeminiService error: $e');
-      final lower = userMessage.trim().toLowerCase();
-      String replyText = "I'm right here with you! Tell me more ✨";
-      if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey')) {
-        replyText = "Hii! 👋 Great to see you! How are you doing today?";
-      } else if (lower.contains('happy') || lower.contains('clap')) {
-        replyText = "Yay! I'm so happy for you! 🎉";
-      } else if (lower.contains('sad')) {
-        replyText = "I'm here for you... Everything is going to be okay ❤️";
-      }
-
-      return GeminiCompanionResponse(
-        reply: replyText,
-        emotion: CharacterEmotion.happy,
-        animation: 'smile',
-        intensity: 0.8,
-      );
+      return _getSmartResponse(userMessage);
     }
+  }
+
+  GeminiCompanionResponse _getSmartResponse(String userMessage) {
+    final lower = userMessage.trim().toLowerCase();
+    final now = DateTime.now();
+    final hour = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
+    final period = now.hour >= 12 ? 'PM' : 'AM';
+    final minuteStr = now.minute.toString().padLeft(2, '0');
+    final timeStr = "$hour:$minuteStr $period";
+
+    String replyText = "I'm always swinging around! Tell me what's on your mind 🕷️✨";
+    CharacterEmotion emotion = CharacterEmotion.happy;
+    String animation = 'talking';
+
+    if (lower.contains('time') || lower.contains('clock') || lower.contains('hour')) {
+      replyText = "It's currently $timeStr right now! ⏰";
+      emotion = CharacterEmotion.surprised;
+      animation = 'talking';
+    } else if (lower.contains('hows your day') || lower.contains('how is your day') || lower.contains('how are you') || lower.contains('how r u') || lower.contains('how u doing')) {
+      replyText = "My day has been awesome! Just saved the neighborhood and now hanging out with you. How about yours? 😊";
+      emotion = CharacterEmotion.happy;
+      animation = 'talking';
+    } else if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey')) {
+      replyText = "Hii! 👋 Great to see you! How are you doing today?";
+      emotion = CharacterEmotion.happy;
+      animation = 'wave';
+    } else if (lower.contains('happy') || lower.contains('clap') || lower.contains('great') || lower.contains('awesome')) {
+      replyText = "Yay! I'm so happy for you! 🎉";
+      emotion = CharacterEmotion.excited;
+      animation = 'clap';
+    } else if (lower.contains('disappointed') || lower.contains('bad') || lower.contains('hate')) {
+      replyText = "Aw man... don't be down. Tomorrow is a brand new day! 🕸️";
+      emotion = CharacterEmotion.annoyed;
+      animation = 'disappointed';
+    } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('depressed')) {
+      replyText = "I'm right here with you... Everything is going to be okay ❤️";
+      emotion = CharacterEmotion.sad;
+      animation = 'sad';
+    } else if (lower.contains('who are you') || lower.contains('your name')) {
+      replyText = "I'm your friendly neighborhood Spider-Man AI companion! 🕷️";
+      emotion = CharacterEmotion.happy;
+      animation = 'talking';
+    } else {
+      replyText = "That's awesome! Tell me more, I'm all ears! 🕷️✨";
+      emotion = CharacterEmotion.happy;
+      animation = 'talking';
+    }
+
+    return GeminiCompanionResponse(
+      reply: replyText,
+      emotion: emotion,
+      animation: animation,
+      intensity: 0.8,
+    );
   }
 
   GeminiCompanionResponse _parseJsonOutput(String rawJson) {
     try {
-      // Strip markdown backticks if present
       var cleanJson = rawJson.trim();
       if (cleanJson.startsWith('```json')) {
         cleanJson = cleanJson.substring(7);
