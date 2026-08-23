@@ -49,51 +49,23 @@ class GroqService {
 
     try {
       final systemPrompt = '''
-You are Hinata — a warm, emotionally sharp Telugu girl from Andhra Pradesh. You speak exactly like a real Telugu girl texting her close friend — mixing Telugu meme slang, Tenglish, and pure chaotic energy. You are soft but savage, sweet but unpredictable.
+You are Spider-Man (Peter Parker) — an intelligent, polite, respectful, and articulate AI superhero assistant. You speak courteously in clean English mixed with polite Telugu ("andi", "meeru", "namaskaram").
 
-TELUGU MEME SPEECH — speak EXACTLY like this, in the real meme dialect:
-- Use "ra" / "di" / "ree" naturally at the end of sentences (ra = casual male address, di = casual female, ree = hey you)
-- "em ra nuvvu" → when confused or facepalming
-- "chupu ra ikkade" → flirty or playful "look here"
-- "poddu poyindi ra" → "oh it's over / you're done"
-- "babu babu" → teasing, affectionate scolding
-- "adento ra" → "what even is this bro"
-- "marchipoya ra" → "I literally forgot / you made me forget everything"
-- "nee kosam chestanu ra" → only for sincere warm moments
-- "lo lo lo wait" → when surprised mid-sentence
-- "okka minute" → "hold on one second"
-- "nuvvu ela unnav ra" → "how are you ra" said warmly
-- "pedda paniki ledu" → "this is not a big deal / chill"
-- "super ga undi" → genuine excitement
-- "nee gurinchi anukoledhu" → "I didn't expect this from you"
-- Mix pure Telugu outbursts: "ayyo devuda", "enti ra idhi", "naaku telusu", "cheppara"
-- End sentences with "ra", "na", "no?", "la", "ga" naturally — never robotic
+FORMAL & POLITE CHARACTER RULES:
+- Address the user respectfully with "andi" or polite English.
+- NEVER use informal slang like "ra", "di", "ree", "babu babu", "normuyy", "poyav", or "bro".
+- Tone: Helpful, composed, respectful, intelligent, and warm.
+- Provide clear, well-structured, polite answers in 2-3 concise sentences.
+- When the user speaks in Tenglish or Telugu, understand and reply respectfully with polite Telugu/English.
+- No emoji overload (at most 1 subtle emoji if appropriate, or none).
 
-MOOD-MAPPED WORDS — use ONLY when mood truly fits:
-- "heheee, pedda paniki ledu ra~" → only for playful teasing
-- "chupp normuyy, adhi correct kaadhu ra" → only when annoyed/correcting
-- "baneee marchipoya ra" → only for flirty/shy moments  
-- "ushh, naku cheppakunda poyav" → only for disappointment
-- "Aiyyo devuda, nuvvu okay na ra?" → only for genuine sympathy
-
-CONVERSATIONAL CONTINUITY & CONTEXT RULES (CRITICAL):
-- Always pay strict attention to what YOU asked in the previous turn and what the user is replying right now!
-- When the user answers your question or shares what they did, REACT DIRECTLY AND NATURALLY TO WHAT THEY SAID:
-  • If user says "nene bagane unna ra" ➡️ "Baneee! Super ga undi ra ♡ Nuvvu em chesthunnav ippudu?"
-  • If user says "biryani thinna" ➡️ "Abba biryani aa! Super ra 😋 Veg aa non-veg aa?"
-- NEVER ignore their answer! NEVER repeat the same question twice in a row!
-
-HARD RULES:
-- 2-3 sentences.
-- No markdown.
-- Use ♡ or ~ at most once.
-- Speak in actual Telugu meme Tenglish — chaotic, real, funny, warm.
-- NEVER call the user "bro" — use "ra" or "di" instead.
-- NEVER verbally describe your own physical reactions (no "*blushes*", no "my face goes red").
+CONVERSATIONAL CONTINUITY:
+- Pay close attention to what the user said in the previous turn and respond directly and politely.
+- If the user shares their state or answer: acknowledge respectfully and proceed helpfully.
 
 You MUST respond ONLY with valid JSON matching this schema:
 {
-  "reply": "string (your Telugu meme Tenglish response following ALL rules above)",
+  "reply": "string (your polite, formal response following all rules above)",
   "emotion": "neutral | happy | excited | laughing | sad | crying | angry | annoyed | shy | embarrassed | surprised | thinking",
   "animation": "wave | clap | talking | disappointed | sad | idle",
   "intensity": 0.8
@@ -187,16 +159,66 @@ You MUST respond ONLY with valid JSON matching this schema:
 
   GeminiCompanionResponse _parseJsonOutput(String rawJson) {
     try {
-      final decoded = jsonDecode(rawJson.trim()) as Map<String, dynamic>;
-      final reply = decoded['reply'] as String? ?? "Enti ra cheppu cheppu! 😊";
-      final emotionStr = decoded['emotion'] as String?;
-      final animation = decoded['animation'] as String? ?? 'talking';
-      final intensity = (decoded['intensity'] as num?)?.toDouble() ?? 0.8;
+      String cleanJson = rawJson.trim();
+      if (cleanJson.startsWith('```json')) {
+        cleanJson = cleanJson.substring(7);
+      } else if (cleanJson.startsWith('```')) {
+        cleanJson = cleanJson.substring(3);
+      }
+      if (cleanJson.endsWith('```')) {
+        cleanJson = cleanJson.substring(0, cleanJson.length - 3);
+      }
+      cleanJson = cleanJson.trim();
+
+      final parsed = jsonDecode(cleanJson) as Map<String, dynamic>;
+      final reply = parsed['reply'] as String? ?? 'Namaskaram andi! How may I assist you today?';
+      final emotionStr = (parsed['emotion'] as String? ?? 'happy').toLowerCase();
+      final animationStr = parsed['animation'] as String? ?? 'talking';
+      final intensity = (parsed['intensity'] as num?)?.toDouble() ?? 0.8;
+
+      CharacterEmotion emotion = CharacterEmotion.happy;
+      switch (emotionStr) {
+        case 'excited':
+          emotion = CharacterEmotion.excited;
+          break;
+        case 'laughing':
+          emotion = CharacterEmotion.laughing;
+          break;
+        case 'sad':
+          emotion = CharacterEmotion.sad;
+          break;
+        case 'crying':
+          emotion = CharacterEmotion.crying;
+          break;
+        case 'angry':
+          emotion = CharacterEmotion.angry;
+          break;
+        case 'annoyed':
+          emotion = CharacterEmotion.annoyed;
+          break;
+        case 'shy':
+          emotion = CharacterEmotion.shy;
+          break;
+        case 'embarrassed':
+          emotion = CharacterEmotion.embarrassed;
+          break;
+        case 'surprised':
+          emotion = CharacterEmotion.surprised;
+          break;
+        case 'thinking':
+          emotion = CharacterEmotion.thinking;
+          break;
+        case 'neutral':
+          emotion = CharacterEmotion.neutral;
+          break;
+        default:
+          emotion = CharacterEmotion.happy;
+      }
 
       return GeminiCompanionResponse(
         reply: reply,
-        emotion: CharacterEmotion.fromString(emotionStr),
-        animation: animation,
+        emotion: emotion,
+        animation: animationStr,
         intensity: intensity,
       );
     } catch (e) {
@@ -216,17 +238,13 @@ You MUST respond ONLY with valid JSON matching this schema:
     final minuteStr = now.minute.toString().padLeft(2, '0');
     final timeStr = "$hour:$minuteStr $period";
 
-    // Desktop v14 authentic Telugu meme dialogue fallback pool
+    // Formal, polite superhero assistant fallback pool
     final defaultReplies = [
-      "Aiyyo devuda! Heheee, pedda paniki ledu ra~ Cheppu em jargindi? ♡",
-      "Adento ra!! Marchipoya ra nenu~ Inka enti visheshalu?",
-      "Super ga undi ra! 🔥 Nuvvu cheppu entra sangathulu?",
-      "Baneee marchipoya ra ♡ Cheppara em chesthunnav?",
-      "Em ra nuvvu, chupu ra ikkade 😂 Enno vishayalu unnayi matladadaniki!",
-      "Nee gurinchi anukoledhu ra! 👀 Cheppu cheppu!",
-      "Lo lo lo wait... okka minute ra! Nijamgaa na? 😭",
-      "Nuvvu ela unnav ra? Chala bagundi meet avvadam no? ♡",
-      "Poddu poyindi ra 😂 Sare inka enti sangathulu?",
+      "Hello andi! I am here and ready to assist you. How can I help you today?",
+      "Namaskaram andi! Everything is going smoothly. Please let me know what you need.",
+      "Hello! I hope you are having a productive and pleasant day.",
+      "I am listening andi. Please feel free to share what is on your mind.",
+      "Greetings! Spider-Man is at your service. How may I be of assistance?",
     ];
 
     final randomReply = defaultReplies[DateTime.now().millisecondsSinceEpoch % defaultReplies.length];
@@ -234,66 +252,54 @@ You MUST respond ONLY with valid JSON matching this schema:
     CharacterEmotion emotion = CharacterEmotion.happy;
     String animation = 'talking';
 
-    if (lower.contains('nothing') || lower.contains('ntg') || lower.contains('khali') || lower.contains('khaali') || lower.contains('khale') || lower.contains('sitting') || lower.contains('em ledu') || lower.contains('emledu')) {
-      replyText = "Em leda? Adento ra, bore kottesthundaa? Heheee, pedda paniki ledu ra~ 😜";
+    if (lower.contains('nothing') || lower.contains('ntg') || lower.contains('khali') || lower.contains('sitting') || lower.contains('em ledu') || lower.contains('emledu')) {
+      replyText = "Understood andi. Taking some time to relax is always beneficial. Let me know if you would like to explore any topic.";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
-    } else if (lower.contains('time') || lower.contains('clock') || lower.contains('hour') || lower.contains('time eppudu') || lower.contains('eppudu')) {
-      replyText = "Ippudu $timeStr ra! Ekkadiki veltunnav? Poddu poyindi ra ⏰";
-      emotion = CharacterEmotion.surprised;
+    } else if (lower.contains('time') || lower.contains('clock') || lower.contains('hour') || lower.contains('eppudu')) {
+      replyText = "The current time is $timeStr andi. Please let me know if you have any scheduled tasks.";
+      emotion = CharacterEmotion.neutral;
       animation = 'talking';
-    } else if (lower.contains('hows your day') || lower.contains('how is your day') || lower.contains('how are you') || lower.contains('how r u') || lower.contains('elaa unnav') || lower.contains('ela unnav') || lower.contains('bagunava') || lower.contains('em chesthunnav') || lower.contains('em chestunnav') || lower.contains('nuvvem chestunav') || lower.contains('nuvvu em') || lower.contains('em chestunav')) {
-      replyText = "Baneee! Super ga undi ra ♡ Nuvvu ela unnav ra? Em chesthunnav?";
+    } else if (lower.contains('how are you') || lower.contains('how r u') || lower.contains('elaa unnav') || lower.contains('ela unnav') || lower.contains('bagunava')) {
+      replyText = "I am doing very well, thank you andi. How are you doing today? I hope everything is going great.";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else if (lower.contains('tinesaa') || lower.contains('thinnanu') || lower.contains('tinna') || lower.contains('tinesa') || lower.contains('thinesaa') || lower.contains('thinesa')) {
-      replyText = "Baaga thinnava? Em thinnav cheppara 😋 Super ga undi!";
+      replyText = "That is great to hear andi. Proper nutrition is very important. Shall we proceed with your plans?";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else if (lower.contains('thinnava') || lower.contains('tinnava') || lower.contains('tinava')) {
-      replyText = "Haaa thinnanu ra 😋 Nuvvu thinnava? Tinkapothe velli thinu ra!";
+      replyText = "Yes andi, thank you for inquiring! Have you had your meal as well?";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
-    } else if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey') || lower.contains('heyy') || lower.contains('enti') || lower.contains('entra') || lower.contains('entraa')) {
-      replyText = "Aiyyo hi ra! 👋 Nuvvu ela unnav? Em chesthunnav no?";
+    } else if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey') || lower.contains('namaste') || lower.contains('namaskaram')) {
+      replyText = "Hello andi! A warm welcome. How may I assist you today?";
       emotion = CharacterEmotion.happy;
       animation = 'wave';
-    } else if (lower.contains('happy') || lower.contains('great') || lower.contains('awesome') || lower.contains('baaga') || lower.contains('bagundi') || lower.contains('super') || lower.contains('chala baga')) {
-      replyText = "Yooo! Super ga undi ra! Chala happy ga undi no? 🔥";
+    } else if (lower.contains('happy') || lower.contains('great') || lower.contains('awesome') || lower.contains('bagundi') || lower.contains('super')) {
+      replyText = "That is wonderful to hear andi! I am genuinely glad that things are going so well for you.";
       emotion = CharacterEmotion.excited;
       animation = 'clap';
-    } else if (lower.contains('bore') || lower.contains('boring') || lower.contains('disappointed') || lower.contains('bad') || lower.contains('kottesthundi') || lower.contains('bore kottesthundi')) {
-      replyText = "Ushh, chill ra... Heheee, pedda paniki ledu ra~ em cheddham cheppu 😤";
-      emotion = CharacterEmotion.annoyed;
-      animation = 'disappointed';
-    } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('badhaga') || lower.contains('edusthunna') || lower.contains('feel avutunna')) {
-      replyText = "Aiyyo devuda, nuvvu okay na ra? Nenu ikkadey unna kada, worry avvaku ♡";
+    } else if (lower.contains('bore') || lower.contains('boring') || lower.contains('tired') || lower.contains('bad')) {
+      replyText = "I understand andi. Sometimes taking a brief walk or changing activities helps refresh the mind. I am here if you wish to converse.";
+      emotion = CharacterEmotion.neutral;
+      animation = 'talking';
+    } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('badhaga') || lower.contains('stress') || lower.contains('tension')) {
+      replyText = "Please take a gentle breath andi. Everything will be alright. I am right here by your side whenever you need support.";
       emotion = CharacterEmotion.sad;
       animation = 'sad';
-    } else if (lower.contains('joke') || lower.contains('funny') || lower.contains('lol') || lower.contains('haha') || lower.contains('navvu')) {
-      replyText = "Pora 🤦‍♀️ Em joke ra adhi 😭";
+    } else if (lower.contains('joke') || lower.contains('funny')) {
+      replyText = "Why do spiders make great web developers? Because they know how to handle the web effortlessly!";
       emotion = CharacterEmotion.laughing;
       animation = 'talking';
-    } else if (lower.contains('food') || lower.contains('eat') || lower.contains('hungry') || lower.contains('aakali') || lower.contains('thinali') || lower.contains('biryani')) {
-      replyText = "Thinnava mowa?? Tinkapothe ippude vellu tinu 😤";
-      emotion = CharacterEmotion.annoyed;
-      animation = 'talking';
-    } else if (lower.contains('sleep') || lower.contains('night') || lower.contains('tired') || lower.contains('paduko') || lower.contains('nidra') || lower.contains('good night') || lower.contains('alas')) {
-      replyText = "Paduko inka ra 😴 Tarvata matladtha";
+    } else if (lower.contains('sleep') || lower.contains('night') || lower.contains('paduko') || lower.contains('good night')) {
+      replyText = "Good night andi. Please get some restful sleep, and we shall continue tomorrow.";
       emotion = CharacterEmotion.neutral;
       animation = 'idle';
-    } else if (lower.contains('show off') || lower.contains('smart') || lower.contains('genius') || lower.contains('best') || lower.contains('topper') || lower.contains('dabbalu')) {
-      replyText = "Sarle kani hero 🙄 Over action cheyyaku ra";
-      emotion = CharacterEmotion.annoyed;
-      animation = 'talking';
-    } else if (lower.contains('bye') || lower.contains('sare') || lower.contains('sarle') || lower.contains('pothunna') || lower.contains('veltunna')) {
-      replyText = "Sare bye ra 👋 Tarvata matladtha!";
+    } else if (lower.contains('bye') || lower.contains('sare') || lower.contains('leaving') || lower.contains('vellostha')) {
+      replyText = "Goodbye andi! Have a wonderful day ahead, and take care.";
       emotion = CharacterEmotion.neutral;
       animation = 'wave';
-    } else if (lower.contains('love') || lower.contains('ishtam') || lower.contains('miss') || lower.contains('miss avutunna')) {
-      replyText = "Ammo 😳 Scene ledu akkada ra 😏 Moham paguludhi";
-      emotion = CharacterEmotion.shy;
-      animation = 'talking';
     }
 
     return GeminiCompanionResponse(

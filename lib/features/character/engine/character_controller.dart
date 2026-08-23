@@ -79,43 +79,37 @@ class CharacterController extends StateNotifier<CharacterState> {
     switch (gesture) {
       case CharacterGesture.headPat:
         reactionEmotion = CharacterEmotion.happy;
-        reactionText = 'Mm... nijamgaa chala nice ga undi ra ♡';
+        reactionText = 'Hello andi! Thank you, it is a pleasure interacting with you.';
         animation = 'smile';
         break;
       case CharacterGesture.cheekPoke:
-        reactionEmotion = CharacterEmotion.shy;
-        reactionText = 'Adento ra!! Marchipoya ra nenu~ face red aipoyindi ♡';
-        animation = 'blush';
+        reactionEmotion = CharacterEmotion.happy;
+        reactionText = 'Spider-Man at your service andi! How may I assist you?';
+        animation = 'smile';
         break;
       case CharacterGesture.noseTap:
         reactionEmotion = CharacterEmotion.surprised;
-        reactionText = 'Aiyyo ra!! Em chesav idhi nee gurinchi?? 😮';
+        reactionText = 'Greetings andi! I am alert and ready for your commands.';
         animation = 'surprised';
         break;
       case CharacterGesture.poke:
-        if (state.interactionCount % 4 == 3) {
-          reactionEmotion = CharacterEmotion.annoyed;
-          reactionText = 'Chupp normuyy, adhi correct kaadhu ra 😤';
-          animation = 'pout';
-        } else {
-          reactionEmotion = CharacterEmotion.playful;
-          reactionText = 'Heheee, pedda paniki ledu ra~ 😜';
-          animation = 'giggle';
-        }
+        reactionEmotion = CharacterEmotion.happy;
+        reactionText = 'Hello andi! Please let me know what you would like to discuss.';
+        animation = 'talking';
         break;
       case CharacterGesture.hold:
-        reactionEmotion = CharacterEmotion.affectionate;
-        reactionText = 'Hand pattukunnav... baneee ra ♡';
+        reactionEmotion = CharacterEmotion.happy;
+        reactionText = 'Thank you andi. I appreciate our collaboration today.';
         animation = 'warmSmile';
         break;
       case CharacterGesture.swipe:
         reactionEmotion = CharacterEmotion.excited;
-        reactionText = 'Super ga undi ra! Yooo! ✨';
+        reactionText = 'Ready for action andi! Please feel free to ask anything.';
         animation = 'happyBounce';
         break;
       case CharacterGesture.tickle:
         reactionEmotion = CharacterEmotion.laughing;
-        reactionText = 'AYYO DEVUDA stop ra stop!! 🤣';
+        reactionText = 'Haha, very lively andi! Let us see what we can accomplish today.';
         animation = 'laugh';
         break;
     }
