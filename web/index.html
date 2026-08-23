@@ -32,9 +32,22 @@
   <title>hinata_ai</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- model_viewer_plus: Google model-viewer element for Web 3D rendering -->
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
-  <script type="module" src="assets/packages/model_viewer_plus/assets/model-viewer.min.js" defer></script>
+  <!-- Protect customElements.define against duplicate model-viewer element registrations -->
+  <script>
+    (function() {
+      if (typeof customElements !== 'undefined' && customElements.define) {
+        var origDefine = customElements.define.bind(customElements);
+        customElements.define = function(name, constructor, options) {
+          if (customElements.get(name)) {
+            console.warn('[ModelViewer Guard] Skipping duplicate registration for custom element:', name);
+            return;
+          }
+          return origDefine(name, constructor, options);
+        };
+      }
+    })();
+  </script>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 </head>
 <body>
   <!--

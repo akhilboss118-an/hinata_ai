@@ -130,6 +130,11 @@ class CharacterEngine extends ConsumerWidget {
   }
 
   Widget _buildModelStage(CharacterState state) {
+    // If state.currentAnimation is 'idle', pass null so autoPlay plays the embedded Mixamo idle animation clip ('mixamo.com')
+    final String? activeAnim = (state.currentAnimation == 'idle' || state.currentAnimation.isEmpty)
+        ? null
+        : state.currentAnimation;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 20),
@@ -139,13 +144,14 @@ class CharacterEngine extends ConsumerWidget {
           ar: false,
           autoRotate: true,
           autoRotateDelay: 0,
-          rotationPerSecond: '10deg',
+          rotationPerSecond: '5deg',
           cameraControls: true,
-          shadowIntensity: 1.0,
+          shadowIntensity: 1.2,
           backgroundColor: Colors.transparent,
           autoPlay: true,
-          animationName: state.currentAnimation,
-          cameraOrbit: '0deg 75deg 2.5m',
+          animationName: activeAnim,
+          cameraOrbit: '0deg 75deg auto',
+          fieldOfView: '30deg',
         ),
       ),
     );
