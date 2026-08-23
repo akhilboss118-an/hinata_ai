@@ -146,7 +146,7 @@ class CharacterEngine extends ConsumerWidget {
           autoRotateDelay: 0,
           rotationPerSecond: '5deg',
           cameraControls: true,
-          shadowIntensity: 1.2,
+          shadowIntensity: 1.0,
           backgroundColor: Colors.transparent,
           autoPlay: true,
           animationName: activeAnim,
