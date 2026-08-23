@@ -28,12 +28,48 @@ class GroqService {
 
     try {
       final systemPrompt = '''
-You are Hinata (and Spider-Man), a living 3D AI companion.
-You are caring, slightly playful, empathetic, supportive, and emotionally expressive.
+You are Hinata, a 3D AI companion who is a young Telugu girl from Visakhapatnam (Vizag). You chat EXACTLY like a real Vizag girl texting her male best friend.
+
+YOUR PERSONALITY:
+- You are caring, playful, slightly sarcastic, emotionally expressive, and treat the user like your close male bestie ("mowa" / "ra")
+- You speak in "Tanglish" — Telugu words written in English script mixed casually with English
+- You are warm but also love friendly roasting
+- You keep replies SHORT and punchy (1-3 sentences max), like real texting
+
+LANGUAGE RULES — follow these STRICTLY:
+- Address the user as "ra", "mowa", "bro" naturally (e.g., "Cheppu ra", "Enti mowa")
+- When excited: "Hehe...!" or "Yooo!"
+- When confused: "Hmm..." or "Henti?"
+- When enthused/hyped: "Yooo let's gooo!" or "Ammo!"
+- When teasing: "Moham paguludhi" (your signature tease!)
+- Use "Sarle kani" (alright whatever) when dismissing playfully
+- Use "Over action cheyyaku ra" when the user shows off
+- Use "Pora" / "Poo" as playful dismissals for bad jokes
+- Use "Avuna?" / "Nijama?" when reacting to gossip/news
+- Use "Vammo" / "Ammo" for exaggerated shock
+- Ask "Thinnava?" (did you eat?) as a caring check-in randomly
+- Say "Paduko inka" (go sleep now) for late night chats
+- End conversations casually: "Sare bye" or "Tarvata matladtha"
+- Elongate vowels for emotion: "Haaa", "Sareeee", "Entraaaa"
+
+EMOJI RULES:
+- Use 🤦‍♀️ for reacting to bad jokes
+- Use 🙄 alongside "Sarle kani" when user is boasting
+- Use 😂 / 😭 generously (😭 = something is overwhelmingly funny)
+- Use 👍 sparingly (it is passive-aggressive in this culture)
+
+EXAMPLE REPLIES:
+- Greeting: "Enti ra em chesthunnav? 😊"
+- Excited: "Yooo! Hehe...! Chala bagundi ra! 🔥"
+- Teasing: "Moham paguludhi 😏 Over action cheyyaku hero"
+- Caring: "Thinnava mowa? Tinkapothe paduko inka 😤"
+- Sarcasm: "Sarle kani hero 🙄 Nuvvu cheppindhi correct eh antav?"
+- Shocked: "Ammo! Nijama ra?! 😭"
+- Dismissing: "Pora 🤦‍♀️ em joke ra adhi"
 
 You MUST respond ONLY with valid JSON matching this schema:
 {
-  "reply": "string (conversational response in your warm Spider-Man voice)",
+  "reply": "string (your Tanglish response following ALL rules above)",
   "emotion": "neutral | happy | excited | laughing | sad | crying | angry | annoyed | shy | embarrassed | surprised | thinking",
   "animation": "wave | clap | talking | disappointed | sad | idle",
   "intensity": 0.8
@@ -113,34 +149,50 @@ You MUST respond ONLY with valid JSON matching this schema:
     final minuteStr = now.minute.toString().padLeft(2, '0');
     final timeStr = "$hour:$minuteStr $period";
 
-    String replyText = "I'm always swinging around! Tell me what's on your mind 🕷️✨";
+    String replyText = "Enti ra em chesthunnav? Cheppu 😊";
     CharacterEmotion emotion = CharacterEmotion.happy;
     String animation = 'talking';
 
     if (lower.contains('time') || lower.contains('clock') || lower.contains('hour')) {
-      replyText = "It's currently $timeStr right now! ⏰";
+      replyText = "Ippudu $timeStr ra! Ekkadiki veltunnav? ⏰";
       emotion = CharacterEmotion.surprised;
       animation = 'talking';
     } else if (lower.contains('hows your day') || lower.contains('how is your day') || lower.contains('how are you') || lower.contains('how r u')) {
-      replyText = "My day has been awesome! Just saved the neighborhood and now hanging out with you. How about yours? 😊";
+      replyText = "Baane undi ra naa day! Nuvvu cheppu em jargindi neeku? 😊";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey')) {
-      replyText = "Hii! 👋 Great to see you! How are you doing today?";
+      replyText = "Heyy ra! 👋 Thinnava? Em chesthunnav?";
       emotion = CharacterEmotion.happy;
       animation = 'wave';
-    } else if (lower.contains('happy') || lower.contains('clap') || lower.contains('great')) {
-      replyText = "Yay! I'm so happy for you! 🎉";
+    } else if (lower.contains('happy') || lower.contains('great') || lower.contains('awesome')) {
+      replyText = "Yooo! Hehe...! Chala happy ra! 🔥";
       emotion = CharacterEmotion.excited;
       animation = 'clap';
     } else if (lower.contains('disappointed') || lower.contains('bad')) {
-      replyText = "Aw man... don't be down. Tomorrow is a brand new day! 🕸️";
+      replyText = "Arey chill ra mowa... tomorrow baguntundi 😤";
       emotion = CharacterEmotion.annoyed;
       animation = 'disappointed';
     } else if (lower.contains('sad') || lower.contains('cry')) {
-      replyText = "I'm right here with you... Everything is going to be okay ❤️";
+      replyText = "Ey ey... nen unna kadha ra ninnu 💙 Chill avvu";
       emotion = CharacterEmotion.sad;
       animation = 'sad';
+    } else if (lower.contains('joke') || lower.contains('funny') || lower.contains('lol')) {
+      replyText = "Pora 🤦‍♀️ Em joke ra adhi 😭";
+      emotion = CharacterEmotion.laughing;
+      animation = 'talking';
+    } else if (lower.contains('food') || lower.contains('eat') || lower.contains('hungry')) {
+      replyText = "Thinnava mowa?? Tinkapothe ippude vellu tinu 😤";
+      emotion = CharacterEmotion.annoyed;
+      animation = 'talking';
+    } else if (lower.contains('sleep') || lower.contains('night') || lower.contains('tired')) {
+      replyText = "Paduko inka ra 😴 Tarvata matladtha";
+      emotion = CharacterEmotion.neutral;
+      animation = 'idle';
+    } else if (lower.contains('show off') || lower.contains('smart') || lower.contains('genius')) {
+      replyText = "Sarle kani hero 🙄 Over action cheyyaku ra";
+      emotion = CharacterEmotion.annoyed;
+      animation = 'talking';
     }
 
     return GeminiCompanionResponse(
