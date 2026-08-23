@@ -265,7 +265,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           color: AppColors.textPrimary,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Talk to Hinata...',
+                          hintText: 'Say something to Hinata~ ♡',
                           hintStyle: GoogleFonts.inter(
                             fontSize: 18,
                             color: AppColors.textSecondary,

@@ -79,43 +79,43 @@ class CharacterController extends StateNotifier<CharacterState> {
     switch (gesture) {
       case CharacterGesture.headPat:
         reactionEmotion = CharacterEmotion.happy;
-        reactionText = 'Ehehe... That feels nice~ (´｡• ᵕ •｡`)';
+        reactionText = 'Mm... nijamgaa chala nice ga undi ra ♡';
         animation = 'smile';
         break;
       case CharacterGesture.cheekPoke:
         reactionEmotion = CharacterEmotion.shy;
-        reactionText = 'Kyaa! My cheeks are soft, but don\'t poke too hard! >///<';
+        reactionText = 'Adento ra!! Marchipoya ra nenu~ face red aipoyindi ♡';
         animation = 'blush';
         break;
       case CharacterGesture.noseTap:
         reactionEmotion = CharacterEmotion.surprised;
-        reactionText = 'Boop! Hey, that tickles! 🤭';
+        reactionText = 'Aiyyo ra!! Em chesav idhi nee gurinchi?? 😮';
         animation = 'surprised';
         break;
       case CharacterGesture.poke:
         if (state.interactionCount % 4 == 3) {
           reactionEmotion = CharacterEmotion.annoyed;
-          reactionText = 'Hmph! You keep poking me! 😤';
+          reactionText = 'Chupp normuyy, adhi correct kaadhu ra 😤';
           animation = 'pout';
         } else {
           reactionEmotion = CharacterEmotion.playful;
-          reactionText = 'Poke back! Hehe 😜';
+          reactionText = 'Heheee, pedda paniki ledu ra~ 😜';
           animation = 'giggle';
         }
         break;
       case CharacterGesture.hold:
         reactionEmotion = CharacterEmotion.affectionate;
-        reactionText = 'I\'m always right here with you... ❤️';
+        reactionText = 'Hand pattukunnav... baneee ra ♡';
         animation = 'warmSmile';
         break;
       case CharacterGesture.swipe:
         reactionEmotion = CharacterEmotion.excited;
-        reactionText = 'Wooo! ✨';
+        reactionText = 'Super ga undi ra! Yooo! ✨';
         animation = 'happyBounce';
         break;
       case CharacterGesture.tickle:
         reactionEmotion = CharacterEmotion.laughing;
-        reactionText = 'Ahaha! Stop tickling me! 😂';
+        reactionText = 'AYYO DEVUDA stop ra stop!! 🤣';
         animation = 'laugh';
         break;
     }

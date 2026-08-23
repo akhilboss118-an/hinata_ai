@@ -208,18 +208,17 @@ You MUST respond ONLY with valid JSON matching this schema:
     final minuteStr = now.minute.toString().padLeft(2, '0');
     final timeStr = "$hour:$minuteStr $period";
 
-    // Randomized dynamic default responses so the bot NEVER repeats the same line!
+    // Desktop v14 authentic Telugu meme dialogue fallback pool
     final defaultReplies = [
-      "Aavesham thappithe aalochana ledu ra 😂 Cheppu em jargindi?",
-      "Pedda plan idhi! 👀 Enti visheshalu mowa?",
-      "Avuna? Nijama ra?! 😭 Inka cheppu!",
-      "Manaki enduku le... but cheppu cheppu em jargindi? 👀",
-      "Sarle kani mowa 🙄 Nuvvems chesthunnav?",
-      "Yooo! Hehe...! Nuvvu cheppu ra! 🔥",
-      "Over action cheyyaku hero 😏 Cheppu enti vishayam?",
-      "Nee bondha le 😂 Sare inka enti sangathulu?",
-      "Nannu involve cheyyakandi rao garu 🙏 Just kidding, cheppu mowa!",
-      "Arey mowa, natho matladu! Em jargutundi cheppu 😊",
+      "Aiyyo devuda! Heheee, pedda paniki ledu ra~ Cheppu em jargindi? ♡",
+      "Adento ra!! Marchipoya ra nenu~ Inka enti visheshalu?",
+      "Super ga undi ra! 🔥 Nuvvu cheppu entra sangathulu?",
+      "Baneee marchipoya ra ♡ Cheppara em chesthunnav?",
+      "Em ra nuvvu, chupu ra ikkade 😂 Enno vishayalu unnayi matladadaniki!",
+      "Nee gurinchi anukoledhu ra! 👀 Cheppu cheppu!",
+      "Lo lo lo wait... okka minute ra! Nijamgaa na? 😭",
+      "Nuvvu ela unnav ra? Chala bagundi meet avvadam no? ♡",
+      "Poddu poyindi ra 😂 Sare inka enti sangathulu?",
     ];
 
     final randomReply = defaultReplies[DateTime.now().millisecondsSinceEpoch % defaultReplies.length];
@@ -228,39 +227,39 @@ You MUST respond ONLY with valid JSON matching this schema:
     String animation = 'talking';
 
     if (lower.contains('nothing') || lower.contains('ntg') || lower.contains('khali') || lower.contains('khaali') || lower.contains('khale') || lower.contains('sitting') || lower.contains('em ledu') || lower.contains('emledu')) {
-      replyText = "Em leda? Bore kottesthundaa ra? Enno vishayalu unnayi matladadaniki! 😜";
+      replyText = "Em leda? Adento ra, bore kottesthundaa? Heheee, pedda paniki ledu ra~ 😜";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else if (lower.contains('time') || lower.contains('clock') || lower.contains('hour') || lower.contains('time eppudu') || lower.contains('eppudu')) {
-      replyText = "Ippudu $timeStr ra! Ekkadiki veltunnav? ⏰";
+      replyText = "Ippudu $timeStr ra! Ekkadiki veltunnav? Poddu poyindi ra ⏰";
       emotion = CharacterEmotion.surprised;
       animation = 'talking';
     } else if (lower.contains('hows your day') || lower.contains('how is your day') || lower.contains('how are you') || lower.contains('how r u') || lower.contains('elaa unnav') || lower.contains('ela unnav') || lower.contains('bagunava') || lower.contains('em chesthunnav') || lower.contains('em chestunnav') || lower.contains('nuvvem chestunav') || lower.contains('nuvvu em') || lower.contains('em chestunav')) {
-      replyText = "Baane unna ra! Nuvvu cheppu em chesthunnav mowa? 😊";
+      replyText = "Baneee! Super ga undi ra ♡ Nuvvu ela unnav ra? Em chesthunnav?";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else if (lower.contains('tinesaa') || lower.contains('thinnanu') || lower.contains('tinna') || lower.contains('tinesa') || lower.contains('thinesaa') || lower.contains('thinesa')) {
-      replyText = "Baaga thinnava? Em thinnav cheppu ra 😋";
+      replyText = "Baaga thinnava? Em thinnav cheppara 😋 Super ga undi!";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else if (lower.contains('thinnava') || lower.contains('tinnava') || lower.contains('tinava')) {
-      replyText = "Haaa thinnanu ra 😋 Nuvvu thinnava mowa?";
+      replyText = "Haaa thinnanu ra 😋 Nuvvu thinnava? Tinkapothe velli thinu ra!";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey') || lower.contains('heyy') || lower.contains('enti') || lower.contains('entra') || lower.contains('entraa')) {
-      replyText = "Heyy ra! 👋 Thinnava? Em chesthunnav?";
+      replyText = "Aiyyo hi ra! 👋 Nuvvu ela unnav? Em chesthunnav no?";
       emotion = CharacterEmotion.happy;
       animation = 'wave';
     } else if (lower.contains('happy') || lower.contains('great') || lower.contains('awesome') || lower.contains('baaga') || lower.contains('bagundi') || lower.contains('super') || lower.contains('chala baga')) {
-      replyText = "Yooo! Hehe...! Chala happy ra! 🔥";
+      replyText = "Yooo! Super ga undi ra! Chala happy ga undi no? 🔥";
       emotion = CharacterEmotion.excited;
       animation = 'clap';
     } else if (lower.contains('bore') || lower.contains('boring') || lower.contains('disappointed') || lower.contains('bad') || lower.contains('kottesthundi') || lower.contains('bore kottesthundi')) {
-      replyText = "Arey chill ra mowa... em cheddham cheppu 😤";
+      replyText = "Ushh, chill ra... Heheee, pedda paniki ledu ra~ em cheddham cheppu 😤";
       emotion = CharacterEmotion.annoyed;
       animation = 'disappointed';
     } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('badhaga') || lower.contains('edusthunna') || lower.contains('feel avutunna')) {
-      replyText = "Ey ey... nen unna kadha ra ninnu 💙 Chill avvu mowa";
+      replyText = "Aiyyo devuda, nuvvu okay na ra? Nenu ikkadey unna kada, worry avvaku ♡";
       emotion = CharacterEmotion.sad;
       animation = 'sad';
     } else if (lower.contains('joke') || lower.contains('funny') || lower.contains('lol') || lower.contains('haha') || lower.contains('navvu')) {
