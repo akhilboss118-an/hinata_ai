@@ -49,8 +49,14 @@ class CharacterController extends StateNotifier<CharacterState> {
       activeReactionText: speech,
     );
 
-    // Automatically settle back to idle after reaction duration
-    _reactionResetTimer = Timer(const Duration(seconds: 6), () {
+    // Natural timing for gesture reactions before returning to idle
+    final anim = animation.toLowerCase();
+    int durationMs = 3200;
+    if (anim == 'sad' || anim == 'crying') {
+      durationMs = 4500;
+    }
+
+    _reactionResetTimer = Timer(Duration(milliseconds: durationMs), () {
       if (mounted) {
         state = state.copyWith(
           isTalking: false,
