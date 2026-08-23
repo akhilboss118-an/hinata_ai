@@ -36,7 +36,7 @@ class GeminiService {
 
   void _initModel() {
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: 'gemini-1.5-flash-latest',
       apiKey: apiKey,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',
@@ -69,9 +69,18 @@ You MUST respond ALWAYS in valid JSON matching this exact schema:
     List<String> memories = const [],
   }) async {
     if (_model == null) {
-      // Fallback if API key is not yet set
+      final lower = userMessage.trim().toLowerCase();
+      String replyText = "I'm right here with you! Tell me more ✨";
+      if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey')) {
+        replyText = "Hii! 👋 Great to see you! How are you doing today?";
+      } else if (lower.contains('happy') || lower.contains('clap')) {
+        replyText = "Yay! I'm so happy for you! 🎉";
+      } else if (lower.contains('sad')) {
+        replyText = "I'm here for you... Everything is going to be okay ❤️";
+      }
+
       return GeminiCompanionResponse(
-        reply: "I hear you! I'm so happy to chat with you ❤️ ($userMessage)",
+        reply: replyText,
         emotion: CharacterEmotion.happy,
         animation: 'smile',
         intensity: 0.8,
@@ -112,11 +121,21 @@ You MUST respond ALWAYS in valid JSON matching this exact schema:
       return _parseJsonOutput(rawText);
     } catch (e) {
       debugPrint('GeminiService error: $e');
+      final lower = userMessage.trim().toLowerCase();
+      String replyText = "I'm right here with you! Tell me more ✨";
+      if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey')) {
+        replyText = "Hii! 👋 Great to see you! How are you doing today?";
+      } else if (lower.contains('happy') || lower.contains('clap')) {
+        replyText = "Yay! I'm so happy for you! 🎉";
+      } else if (lower.contains('sad')) {
+        replyText = "I'm here for you... Everything is going to be okay ❤️";
+      }
+
       return GeminiCompanionResponse(
-        reply: "I'm always listening! Something briefly interrupted my thoughts, but I'm here ❤️",
-        emotion: CharacterEmotion.shy,
-        animation: 'headTilt',
-        intensity: 0.5,
+        reply: replyText,
+        emotion: CharacterEmotion.happy,
+        animation: 'smile',
+        intensity: 0.8,
       );
     }
   }

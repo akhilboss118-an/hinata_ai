@@ -12,7 +12,7 @@ import 'character_controller.dart';
 import 'character_state.dart';
 
 /// Full-Screen Character Viewport & Talking-Tom Touch Gesture Handler
-class CharacterEngine extends ConsumerWidget {
+class CharacterEngine extends ConsumerStatefulWidget {
   final VoidCallback? onCharacterTap;
   final bool isInteractive;
 
@@ -23,9 +23,29 @@ class CharacterEngine extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CharacterEngine> createState() => _CharacterEngineState();
+}
+
+class _CharacterEngineState extends ConsumerState<CharacterEngine> {
+  bool isIdle = true;
+
+  @override
+  Widget build(BuildContext context) {
     final characterState = ref.watch(characterControllerProvider);
     final characterController = ref.read(characterControllerProvider.notifier);
+
+    final anim = characterState.currentAnimation.toLowerCase();
+    final bool newIsIdle = (anim == 'idle' || anim.isEmpty) && !characterState.isTalking;
+
+    if (newIsIdle != isIdle) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            isIdle = newIsIdle;
+          });
+        }
+      });
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -61,9 +81,14 @@ class CharacterEngine extends ConsumerWidget {
               borderColor: AppColors.primaryLight.withValues(alpha: 0.20),
             ),
 
-            // Video Character Stage (MP4 video loop engine)
+            // Dynamic 3D Character Stage wrapped in AnimatedAlign based on isIdle state
             Positioned.fill(
-              child: _buildModelStage(characterState),
+              child: AnimatedAlign(
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeInOutCubic,
+                alignment: isIdle ? Alignment.center : const Alignment(0.0, -0.30),
+                child: _buildModelStage(characterState),
+              ),
             ),
 
             // Transparent full-screen touch layer (Talking-Tom style hitboxes)
@@ -71,7 +96,7 @@ class CharacterEngine extends ConsumerWidget {
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
                 onTapDown: (details) {
-                  if (!isInteractive) return;
+                  if (!widget.isInteractive) return;
                   final relativeY = details.localPosition.dy / constraints.maxHeight;
 
                   if (relativeY < 0.4) {
@@ -84,20 +109,20 @@ class CharacterEngine extends ConsumerWidget {
                     // General tickle / poke
                     characterController.handleGesture(CharacterGesture.tickle);
                   }
-                  onCharacterTap?.call();
+                  widget.onCharacterTap?.call();
                 },
                 onDoubleTap: () {
-                  if (isInteractive) {
+                  if (widget.isInteractive) {
                     characterController.handleGesture(CharacterGesture.cheekPoke);
                   }
                 },
                 onLongPress: () {
-                  if (isInteractive) {
+                  if (widget.isInteractive) {
                     characterController.handleGesture(CharacterGesture.hold);
                   }
                 },
                 onHorizontalDragEnd: (details) {
-                  if (isInteractive) {
+                  if (widget.isInteractive) {
                     characterController.handleGesture(CharacterGesture.swipe);
                   }
                 },
