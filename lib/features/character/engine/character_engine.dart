@@ -151,61 +151,33 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
 
   Widget _buildModelStage(CharacterState state) {
     String modelPath;
-    String cameraOrbit = '0deg 75deg auto';
-    String cameraTarget = 'auto auto auto';
-    String fieldOfView = '30deg';
-
     final anim = state.currentAnimation.toLowerCase();
 
     if (state.isThinking || anim == 'thinking' || anim == 'think' || anim == 'ponder') {
       modelPath = 'assets/models/thinking.glb';
-      cameraOrbit = '0deg 75deg 3.0m';
-      cameraTarget = '0m 1.1m 0m';
-      fieldOfView = '32deg';
     } else if (anim == 'dance' || anim == 'wave_dance' || anim == 'hiphop' || anim == 'celebrate') {
       modelPath = 'assets/models/wave_dance.glb';
-      cameraOrbit = '0deg 75deg 3.4m';
-      cameraTarget = '0m 1.0m 0m';
-      fieldOfView = '35deg';
     } else if (anim == 'front_flip' || anim == 'flip' || anim == 'jump' || anim == 'acrobatic' || anim == 'happybounce') {
       modelPath = 'assets/models/front_flip.glb';
-      // Front flip jumps high up: pull back camera to 4.2m with 48deg FoV to keep full trajectory on screen
-      cameraOrbit = '0deg 75deg 4.2m';
-      cameraTarget = '0m 1.3m 0m';
-      fieldOfView = '48deg';
     } else if (anim == 'swing_landing' || anim == 'landing' || anim == 'crouch' || anim == 'hero_landing') {
       modelPath = 'assets/models/swing_landing.glb';
-      // Swing landing starts from high up: pull back camera to 4.5m with 50deg FoV to keep full swing and landing on screen
-      cameraOrbit = '0deg 75deg 4.5m';
-      cameraTarget = '0m 1.4m 0m';
-      fieldOfView = '50deg';
     } else if (anim == 'wave' || anim == 'waving' || anim == 'hi' || anim == 'hello') {
       modelPath = 'assets/models/waving_gesture.glb';
-      cameraOrbit = '0deg 75deg auto';
-      fieldOfView = '30deg';
     } else if (anim == 'clap' || anim == 'clapping' || anim == 'cheer') {
       modelPath = 'assets/models/clapping.glb';
-      cameraOrbit = '0deg 75deg auto';
-      fieldOfView = '30deg';
     } else if (anim == 'disappointed' || anim == 'annoyed' || anim == 'pout' || anim == 'disappoint' || state.currentEmotion == CharacterEmotion.annoyed) {
       modelPath = 'assets/models/disappointed.glb';
-      cameraOrbit = '0deg 75deg auto';
-      fieldOfView = '30deg';
     } else if (anim == 'sad' || anim == 'crying' || state.currentEmotion == CharacterEmotion.sad) {
       modelPath = 'assets/models/sad_idle.glb';
-      cameraOrbit = '0deg 75deg auto';
-      fieldOfView = '30deg';
     } else if (state.isTalking || anim == 'talk' || anim == 'talking' || anim == 'speech') {
       modelPath = (state.interactionCount % 2 == 0)
           ? 'assets/models/talking.glb'
           : 'assets/models/talking_1.glb';
-      cameraOrbit = '0deg 75deg auto';
-      fieldOfView = '30deg';
     } else {
       modelPath = 'assets/models/standing_idle.glb';
-      cameraOrbit = '0deg 75deg auto';
-      fieldOfView = '30deg';
     }
+
+    final bool isAcrobatic = anim.contains('flip') || anim.contains('landing') || anim.contains('swing');
 
     return Center(
       child: Padding(
@@ -215,7 +187,7 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
           switchInCurve: Curves.easeIn,
           switchOutCurve: Curves.easeOut,
           child: ModelViewer(
-            key: ValueKey('$modelPath-$cameraOrbit-$fieldOfView'),
+            key: ValueKey(modelPath),
             src: modelPath,
             alt: 'Spider-Man 3D Character',
             ar: false,
@@ -227,9 +199,8 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
             shadowIntensity: 1.0,
             backgroundColor: Colors.transparent,
             autoPlay: true,
-            cameraOrbit: cameraOrbit,
-            cameraTarget: cameraTarget,
-            fieldOfView: fieldOfView,
+            cameraOrbit: '0deg 75deg auto',
+            fieldOfView: isAcrobatic ? '38deg' : '30deg',
           ),
         ),
       ),
