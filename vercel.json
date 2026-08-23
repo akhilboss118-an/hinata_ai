@@ -2,7 +2,7 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/((?!assets/|canvaskit/|icons/|.*\\.js|.*\\.png|.*\\.json|.*\\.glb|.*\\.mp4|.*\\.webm|.*\\.css|.*\\.html|.*\\.otf|.*\\.ttf).*)",
+      "source": "/((?!assets/|canvaskit/|icons/|.*\\.js|.*\\.png|.*\\.json|.*\\.glb|.*\\.fbx|.*\\.mp4|.*\\.webm|.*\\.css|.*\\.html|.*\\.otf|.*\\.ttf).*)",
       "destination": "/index.html"
     }
   ]

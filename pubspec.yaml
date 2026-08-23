@@ -43,8 +43,8 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/models/girl.glb
-    - assets/models/hinata_anim.glb
+    - assets/models/standing_idle.glb
+    - assets/models/
     - assets/videos/
     - assets/images/
     - assets/icons/

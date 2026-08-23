@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:hinata_ai/app/theme/app_colors.dart';
 import 'package:hinata_ai/app/theme/app_shadows.dart';
 import 'package:hinata_ai/app/theme/app_typography.dart';
@@ -130,46 +130,23 @@ class CharacterEngine extends ConsumerWidget {
   }
 
   Widget _buildModelStage(CharacterState state) {
-    Widget avatar = Image.asset(
-      'assets/images/hinata_standing_idle.png',
-      fit: BoxFit.contain,
-      height: 480,
-    );
-
-    // Dynamic micro-animations per character emotion state
-    if (state.currentEmotion == CharacterEmotion.angry ||
-        state.currentEmotion == CharacterEmotion.annoyed) {
-      avatar = avatar
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .shake(hz: 5, duration: 600.ms);
-    } else if (state.currentEmotion == CharacterEmotion.happy ||
-        state.currentEmotion == CharacterEmotion.excited ||
-        state.activeGesture == CharacterGesture.tickle ||
-        state.activeGesture == CharacterGesture.swipe) {
-      avatar = avatar
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: -14, end: 0, duration: 550.ms, curve: Curves.easeOutCubic);
-    } else if (state.isTalking) {
-      avatar = avatar
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: -8, end: 4, duration: 450.ms, curve: Curves.easeInOut);
-    } else if (state.currentEmotion == CharacterEmotion.sad ||
-        state.currentEmotion == CharacterEmotion.crying) {
-      avatar = avatar
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: 4, end: 10, duration: 2000.ms, curve: Curves.easeInOut);
-    } else {
-      // Natural idle breathing float & scale pulse
-      avatar = avatar
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .moveY(begin: -10, end: 10, duration: 2200.ms, curve: Curves.easeInOutCubic)
-          .scale(begin: const Offset(1.0, 1.0), end: const Offset(1.025, 1.025), duration: 2200.ms, curve: Curves.easeInOutCubic);
-    }
-
     return Center(
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 50),
-        child: avatar,
+        padding: const EdgeInsets.only(bottom: 20),
+        child: ModelViewer(
+          src: 'assets/models/standing_idle.glb',
+          alt: 'Hinata 3D Character',
+          ar: false,
+          autoRotate: true,
+          autoRotateDelay: 0,
+          rotationPerSecond: '10deg',
+          cameraControls: true,
+          shadowIntensity: 1.0,
+          backgroundColor: Colors.transparent,
+          autoPlay: true,
+          animationName: state.currentAnimation,
+          cameraOrbit: '0deg 75deg 2.5m',
+        ),
       ),
     );
   }
