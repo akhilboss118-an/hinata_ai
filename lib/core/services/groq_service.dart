@@ -4,19 +4,34 @@ import 'package:http/http.dart' as http;
 import '../../features/character/models/character_emotion.dart';
 import 'gemini_service.dart';
 
-/// Groq AI Service powered by Llama 3.3 70B Ultra-Fast Inference
+/// Groq AI Service powered by Llama 3.3 70B with Multi-Key Pool & Zero-Delay Failover
 class GroqService {
-  final String apiKey;
+  final List<String> apiKeys;
   final String model;
+  static int _currentKeyIndex = 0;
+
+  static List<String> _resolveKeys() {
+    const envKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
+    const envKeysCsv = String.fromEnvironment('GROQ_API_KEYS', defaultValue: '');
+
+    final list = <String>[];
+    if (envKeysCsv.isNotEmpty) {
+      list.addAll(envKeysCsv.split(',').map((k) => k.trim()).where((k) => k.isNotEmpty));
+    }
+    if (envKey.isNotEmpty && !list.contains(envKey)) {
+      list.add(envKey);
+    }
+    return list;
+  }
 
   GroqService({
-    String? apiKey,
+    List<String>? apiKeys,
     this.model = 'llama-3.3-70b-versatile',
-  }) : apiKey = apiKey ?? const String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
+  }) : apiKeys = apiKeys ?? _resolveKeys();
 
-  bool get isConfigured => apiKey.isNotEmpty;
+  bool get isConfigured => apiKeys.isNotEmpty;
 
-  /// Generates ultra-fast companion responses from Groq Llama-3.3-70B
+  /// Generates ultra-fast companion responses from Groq Llama-3.3-70B with multi-key rotation
   Future<GeminiCompanionResponse> generateCompanionResponse({
     required String userMessage,
     List<Map<String, String>> conversationHistory = const [],
@@ -83,34 +98,50 @@ You MUST respond ONLY with valid JSON matching this schema:
 
       messages.add({'role': 'user', 'content': userMessage});
 
-      final response = await http.post(
-        Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
-        headers: {
-          'Authorization': 'Bearer $apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': model,
-          'messages': messages,
-          'temperature': 0.7,
-          'response_format': {'type': 'json_object'},
-        }),
-      );
+      // ─── ROUND-ROBIN KEY ROTATION & ZERO-DELAY MULTI-KEY FAILOVER ───
+      final poolSize = apiKeys.length;
+      final startIndex = _currentKeyIndex;
+      _currentKeyIndex = (_currentKeyIndex + 1) % poolSize;
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'];
-        return _parseJsonOutput(content);
-      } else {
-        debugPrint('Groq API error ${response.statusCode}: ${response.body}');
-        
-        // Auto-switch to ultra-fast 8B model if 70B hits 429 Rate Limit!
-        if (response.statusCode == 429 || response.statusCode >= 500) {
-          debugPrint('Switching to fallback Groq model: llama-3.1-8b-instant');
+      // 1. Try 70B model across each key in the pool
+      for (int attempt = 0; attempt < poolSize; attempt++) {
+        final keyIndex = (startIndex + attempt) % poolSize;
+        final currentApiKey = apiKeys[keyIndex];
+
+        try {
+          final response = await http.post(
+            Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+            headers: {
+              'Authorization': 'Bearer $currentApiKey',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'model': model,
+              'messages': messages,
+              'temperature': 0.7,
+              'response_format': {'type': 'json_object'},
+            }),
+          );
+
+          if (response.statusCode == 200) {
+            final data = jsonDecode(response.body);
+            final content = data['choices'][0]['message']['content'];
+            return _parseJsonOutput(content);
+          } else {
+            debugPrint('Groq key #$keyIndex error ${response.statusCode}: rotating to next key...');
+          }
+        } catch (e) {
+          debugPrint('Groq key #$keyIndex exception: $e. Retrying next key...');
+        }
+      }
+
+      // 2. High-speed 8B fallback across key pool if 70B is globally throttled
+      for (final currentApiKey in apiKeys) {
+        try {
           final fallbackResponse = await http.post(
             Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
             headers: {
-              'Authorization': 'Bearer $apiKey',
+              'Authorization': 'Bearer $currentApiKey',
               'Content-Type': 'application/json',
             },
             body: jsonEncode({
@@ -126,10 +157,10 @@ You MUST respond ONLY with valid JSON matching this schema:
             final content = data['choices'][0]['message']['content'];
             return _parseJsonOutput(content);
           }
-        }
-
-        return _getFallbackResponse(userMessage);
+        } catch (_) {}
       }
+
+      return _getFallbackResponse(userMessage);
     } catch (e) {
       debugPrint('GroqService exception: $e');
       return _getFallbackResponse(userMessage);
