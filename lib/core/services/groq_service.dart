@@ -231,7 +231,22 @@ You MUST respond ONLY with valid JSON matching this schema:
     final minuteStr = now.minute.toString().padLeft(2, '0');
     final timeStr = "$hour:$minuteStr $period";
 
-    String replyText = "Arey mowa, natho matladu! Em jargutundi cheppu 😊";
+    // Randomized dynamic default responses so the bot NEVER repeats the same line!
+    final defaultReplies = [
+      "Aavesham thappithe aalochana ledu ra 😂 Cheppu em jargindi?",
+      "Pedda plan idhi! 👀 Enti visheshalu mowa?",
+      "Avuna? Nijama ra?! 😭 Inka cheppu!",
+      "Manaki enduku le... but cheppu cheppu em jargindi? 👀",
+      "Sarle kani mowa 🙄 Nuvvems chesthunnav?",
+      "Yooo! Hehe...! Nuvvu cheppu ra! 🔥",
+      "Over action cheyyaku hero 😏 Cheppu enti vishayam?",
+      "Nee bondha le 😂 Sare inka enti sangathulu?",
+      "Nannu involve cheyyakandi rao garu 🙏 Just kidding, cheppu mowa!",
+      "Arey mowa, natho matladu! Em jargutundi cheppu 😊",
+    ];
+
+    final randomReply = defaultReplies[DateTime.now().millisecondsSinceEpoch % defaultReplies.length];
+    String replyText = randomReply;
     CharacterEmotion emotion = CharacterEmotion.happy;
     String animation = 'talking';
 
