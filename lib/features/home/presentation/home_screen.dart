@@ -92,6 +92,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const Spacer(),
                   if (chatState.isSending || characterState.isThinking)
                     _buildThinkingPill().animate().fadeIn(duration: 200.ms),
+                  if (characterState.isTalking && characterState.activeReactionText != null)
+                    _buildSubtitleBubble(characterState.activeReactionText!),
                   _buildBottomInteractionArea(),
                 ],
               ),
@@ -156,6 +158,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
+  }
+
+  // ──────────────────────── SUBTITLE SPEECH BUBBLE ───────────────────────
+
+  Widget _buildSubtitleBubble(String text) {
+    return Container(
+      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.primaryLight.withValues(alpha: 0.40),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.60),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.25),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.chat_bubble_outline_rounded,
+              color: AppColors.primaryLight,
+              size: 14,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              text,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                height: 1.35,
+                color: Colors.white,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.1, end: 0, duration: 200.ms);
   }
 
   // ──────────────────── BOTTOM GLASS CHAT PANEL ──────────────────────
