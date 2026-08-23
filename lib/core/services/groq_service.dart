@@ -169,7 +169,7 @@ You MUST respond ONLY with valid JSON matching this schema:
   GeminiCompanionResponse _parseJsonOutput(String rawJson) {
     try {
       final decoded = jsonDecode(rawJson.trim()) as Map<String, dynamic>;
-      final reply = decoded['reply'] as String? ?? "I'm right here with you! 🕷️✨";
+      final reply = decoded['reply'] as String? ?? "Enti ra cheppu cheppu! 😊";
       final emotionStr = decoded['emotion'] as String?;
       final animation = decoded['animation'] as String? ?? 'talking';
       final intensity = (decoded['intensity'] as num?)?.toDouble() ?? 0.8;
@@ -201,45 +201,61 @@ You MUST respond ONLY with valid JSON matching this schema:
     CharacterEmotion emotion = CharacterEmotion.happy;
     String animation = 'talking';
 
-    if (lower.contains('time') || lower.contains('clock') || lower.contains('hour')) {
+    if (lower.contains('time') || lower.contains('clock') || lower.contains('hour') || lower.contains('time eppudu') || lower.contains('eppudu')) {
       replyText = "Ippudu $timeStr ra! Ekkadiki veltunnav? ⏰";
       emotion = CharacterEmotion.surprised;
       animation = 'talking';
-    } else if (lower.contains('hows your day') || lower.contains('how is your day') || lower.contains('how are you') || lower.contains('how r u')) {
-      replyText = "Baane undi ra naa day! Nuvvu cheppu em jargindi neeku? 😊";
+    } else if (lower.contains('hows your day') || lower.contains('how is your day') || lower.contains('how are you') || lower.contains('how r u') || lower.contains('elaa unnav') || lower.contains('ela unnav') || lower.contains('bagunava') || lower.contains('em chesthunnav') || lower.contains('em chestunnav') || lower.contains('nuvvem chestunav') || lower.contains('nuvvu em') || lower.contains('em chestunav')) {
+      replyText = "Baane unna ra! Nuvvu cheppu em chesthunnav mowa? 😊";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
-    } else if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey')) {
+    } else if (lower.contains('tinesaa') || lower.contains('thinnanu') || lower.contains('tinna') || lower.contains('tinesa') || lower.contains('thinesaa') || lower.contains('thinesa')) {
+      replyText = "Baaga thinnava? Em thinnav cheppu ra 😋";
+      emotion = CharacterEmotion.happy;
+      animation = 'talking';
+    } else if (lower.contains('thinnava') || lower.contains('tinnava') || lower.contains('tinava')) {
+      replyText = "Haaa thinnanu ra 😋 Nuvvu thinnava mowa?";
+      emotion = CharacterEmotion.happy;
+      animation = 'talking';
+    } else if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey') || lower.contains('heyy') || lower.contains('enti') || lower.contains('entra') || lower.contains('entraa')) {
       replyText = "Heyy ra! 👋 Thinnava? Em chesthunnav?";
       emotion = CharacterEmotion.happy;
       animation = 'wave';
-    } else if (lower.contains('happy') || lower.contains('great') || lower.contains('awesome')) {
+    } else if (lower.contains('happy') || lower.contains('great') || lower.contains('awesome') || lower.contains('baaga') || lower.contains('bagundi') || lower.contains('super') || lower.contains('chala baga')) {
       replyText = "Yooo! Hehe...! Chala happy ra! 🔥";
       emotion = CharacterEmotion.excited;
       animation = 'clap';
-    } else if (lower.contains('disappointed') || lower.contains('bad')) {
-      replyText = "Arey chill ra mowa... tomorrow baguntundi 😤";
+    } else if (lower.contains('bore') || lower.contains('boring') || lower.contains('disappointed') || lower.contains('bad') || lower.contains('kottesthundi') || lower.contains('bore kottesthundi')) {
+      replyText = "Arey chill ra mowa... em cheddham cheppu 😤";
       emotion = CharacterEmotion.annoyed;
       animation = 'disappointed';
-    } else if (lower.contains('sad') || lower.contains('cry')) {
-      replyText = "Ey ey... nen unna kadha ra ninnu 💙 Chill avvu";
+    } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('badhaga') || lower.contains('edusthunna') || lower.contains('feel avutunna')) {
+      replyText = "Ey ey... nen unna kadha ra ninnu 💙 Chill avvu mowa";
       emotion = CharacterEmotion.sad;
       animation = 'sad';
-    } else if (lower.contains('joke') || lower.contains('funny') || lower.contains('lol')) {
+    } else if (lower.contains('joke') || lower.contains('funny') || lower.contains('lol') || lower.contains('haha') || lower.contains('navvu')) {
       replyText = "Pora 🤦‍♀️ Em joke ra adhi 😭";
       emotion = CharacterEmotion.laughing;
       animation = 'talking';
-    } else if (lower.contains('food') || lower.contains('eat') || lower.contains('hungry')) {
+    } else if (lower.contains('food') || lower.contains('eat') || lower.contains('hungry') || lower.contains('aakali') || lower.contains('thinali') || lower.contains('biryani')) {
       replyText = "Thinnava mowa?? Tinkapothe ippude vellu tinu 😤";
       emotion = CharacterEmotion.annoyed;
       animation = 'talking';
-    } else if (lower.contains('sleep') || lower.contains('night') || lower.contains('tired')) {
+    } else if (lower.contains('sleep') || lower.contains('night') || lower.contains('tired') || lower.contains('paduko') || lower.contains('nidra') || lower.contains('good night') || lower.contains('alas')) {
       replyText = "Paduko inka ra 😴 Tarvata matladtha";
       emotion = CharacterEmotion.neutral;
       animation = 'idle';
-    } else if (lower.contains('show off') || lower.contains('smart') || lower.contains('genius')) {
+    } else if (lower.contains('show off') || lower.contains('smart') || lower.contains('genius') || lower.contains('best') || lower.contains('topper') || lower.contains('dabbalu')) {
       replyText = "Sarle kani hero 🙄 Over action cheyyaku ra";
       emotion = CharacterEmotion.annoyed;
+      animation = 'talking';
+    } else if (lower.contains('bye') || lower.contains('sare') || lower.contains('sarle') || lower.contains('pothunna') || lower.contains('veltunna')) {
+      replyText = "Sare bye ra 👋 Tarvata matladtha!";
+      emotion = CharacterEmotion.neutral;
+      animation = 'wave';
+    } else if (lower.contains('love') || lower.contains('ishtam') || lower.contains('miss') || lower.contains('miss avutunna')) {
+      replyText = "Ammo 😳 Scene ledu akkada ra 😏 Moham paguludhi";
+      emotion = CharacterEmotion.shy;
       animation = 'talking';
     }
 

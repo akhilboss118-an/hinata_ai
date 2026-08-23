@@ -156,24 +156,29 @@ class ChatController extends StateNotifier<ChatState> {
         );
       }
 
-      String targetAnimation = aiResponse.animation.isEmpty ? 'talking' : aiResponse.animation;
+      // Trust AI-chosen animation & emotion first — only override if AI returned empty/idle
+      String targetAnimation = aiResponse.animation.isNotEmpty ? aiResponse.animation : 'talking';
       CharacterEmotion targetEmotion = aiResponse.emotion;
 
-      final lower = text.trim().toLowerCase();
-      if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey') || lower.contains('wave')) {
-        targetAnimation = 'wave';
-        targetEmotion = CharacterEmotion.happy;
-      } else if (lower.contains('happy') || lower.contains('clap') || lower.contains('excited') || lower.contains('yay') || lower.contains('great')) {
-        targetAnimation = 'clap';
-        targetEmotion = CharacterEmotion.excited;
-      } else if (lower.contains('disappointed') || lower.contains('disappoint') || lower.contains('bad') || lower.contains('hate') || lower.contains('pout')) {
-        targetAnimation = 'disappointed';
-        targetEmotion = CharacterEmotion.annoyed;
-      } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('depressed') || lower.contains('unhappy')) {
-        targetAnimation = 'sad';
-        targetEmotion = CharacterEmotion.sad;
-      } else {
-        targetAnimation = 'talking';
+      // Only apply keyword-based override if AI returned 'idle' or empty (fallback safety net)
+      if (targetAnimation == 'idle' || targetAnimation.isEmpty) {
+        final lower = text.trim().toLowerCase();
+        // English + Telugu keyword matching
+        if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey') || lower.contains('wave') || lower.contains('namaste')) {
+          targetAnimation = 'wave';
+          targetEmotion = CharacterEmotion.happy;
+        } else if (lower.contains('happy') || lower.contains('clap') || lower.contains('excited') || lower.contains('yay') || lower.contains('great') || lower.contains('baaga') || lower.contains('super') || lower.contains('bagundi')) {
+          targetAnimation = 'clap';
+          targetEmotion = CharacterEmotion.excited;
+        } else if (lower.contains('disappointed') || lower.contains('bad') || lower.contains('hate') || lower.contains('bore') || lower.contains('boring') || lower.contains('istam ledu')) {
+          targetAnimation = 'disappointed';
+          targetEmotion = CharacterEmotion.annoyed;
+        } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('depressed') || lower.contains('badhaga') || lower.contains('edusthunna')) {
+          targetAnimation = 'sad';
+          targetEmotion = CharacterEmotion.sad;
+        } else {
+          targetAnimation = 'talking';
+        }
       }
 
       // Trigger 3D Character Reaction (with speech bubble showing the reply)
@@ -216,7 +221,7 @@ class ChatController extends StateNotifier<ChatState> {
       final fallbackMsg = ChatMessage(
         messageId: _uuid.v4(),
         sender: 'hinata',
-        text: "I'm here with you! ❤️ (Something interrupted my thoughts briefly)",
+        text: "Arey mowa nen unna kadha 💙 Oka second aagu, malli cheppu!",
         timestamp: DateTime.now(),
       );
       _localMessages.add(fallbackMsg);
