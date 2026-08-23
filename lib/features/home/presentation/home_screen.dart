@@ -167,14 +167,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ──────────────────────── SUBTITLE SPEECH BUBBLE ───────────────────────
 
   Widget _buildSubtitleBubble(String text) {
-    if (kIsWeb) {
-      try {
-        js.context.callMethod('speakText', [text]);
-      } catch (e) {
-        debugPrint('TTS error: $e');
-      }
-    }
-
     return _FadingSubtitleBubble(
       key: ValueKey(text),
       text: text,
@@ -291,24 +283,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                     const SizedBox(width: 8),
 
-                    // Adaptive action button: mic when empty, send when typing
+                    // Send action button
                     Material(
-                      color: AppColors.surfaceInput.withValues(alpha: 0.8),
+                      color: AppColors.primary,
                       borderRadius: BorderRadius.circular(999),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(999),
-                        onTap: _hasText ? _sendMessage : _onMicPressed,
-                        child: SizedBox(
+                        onTap: _sendMessage,
+                        child: const SizedBox(
                           width: 44,
                           height: 44,
                           child: Icon(
-                            _hasText
-                                ? Icons.arrow_upward_rounded
-                                : Icons.mic_rounded,
-                            size: 20,
-                            color: _hasText
-                                ? AppColors.primaryLight
-                                : AppColors.textPrimary,
+                            Icons.arrow_upward_rounded,
+                            size: 22,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -322,74 +310,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
-
-  bool _isListening = false;
-
-  void _onMicPressed() {
-    if (kIsWeb) {
-      setState(() => _isListening = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '🎙️ Listening... Speak in Telugu or English!',
-            style: GoogleFonts.inter(fontSize: 13, color: Colors.white),
-          ),
-          backgroundColor: AppColors.primary,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-
-      try {
-        _startWebSpeechRecognition();
-      } catch (e) {
-        setState(() => _isListening = false);
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Voice input is supported on Web browser!',
-            style: GoogleFonts.inter(fontSize: 13),
-          ),
-          backgroundColor: AppColors.surfaceCardHover,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
-  void _startWebSpeechRecognition() {
-    try {
-      final onResult = js.allowInterop((String result) {
-        if (mounted) {
-          setState(() {
-            _isListening = false;
-            _textController.text = result;
-            _hasText = true;
-          });
-          _sendMessage();
-        }
-      });
-
-      final onError = js.allowInterop((dynamic err) {
-        if (mounted) {
-          setState(() => _isListening = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Mic error: $err. Try typing or tap mic again!'),
-              backgroundColor: Colors.redAccent,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      });
-
-      js.context.callMethod('startSpeechRecognition', [onResult, onError]);
-    } catch (e) {
-      setState(() => _isListening = false);
-      debugPrint('Speech recognition error: $e');
-    }
-  }
 }
 
 // ──────────────────────── TYPEWRITER ANIMATION WIDGET ─────────────────────
@@ -397,13 +317,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 class _TypewriterText extends StatefulWidget {
   final String text;
   final TextStyle style;
-  final Duration charDuration;
 
   const _TypewriterText({
     super.key,
     required this.text,
     required this.style,
-    this.charDuration = const Duration(milliseconds: 30),
   });
 
   @override
@@ -433,7 +351,8 @@ class _TypewriterTextState extends State<_TypewriterText> {
     _displayedText = '';
     int currentIndex = 0;
 
-    _timer = Timer.periodic(widget.charDuration, (timer) {
+    // Smoother speed: 25ms per character for natural text animation
+    _timer = Timer.periodic(const Duration(milliseconds: 25), (timer) {
       if (currentIndex < widget.text.length) {
         if (mounted) {
           setState(() {
@@ -458,7 +377,7 @@ class _TypewriterTextState extends State<_TypewriterText> {
     return Text(
       _displayedText,
       style: widget.style,
-      maxLines: 3,
+      maxLines: 4,
       overflow: TextOverflow.ellipsis,
     );
   }
@@ -490,7 +409,7 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
     super.initState();
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 500),
     );
     _opacityAnimation = CurvedAnimation(
       parent: _fadeController,
@@ -512,8 +431,13 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
 
   void _scheduleFadeOut() {
     _dismissTimer?.cancel();
-    // Visible for exactly 2 seconds, then smoothly fades away!
-    _dismissTimer = Timer(const Duration(milliseconds: 2000), () {
+    
+    // Dynamic Reading Duration:
+    // Short texts: 2.5 seconds
+    // Long texts: 2.5s base + 50ms per character, capped at 7.0 seconds max
+    final int displayDurationMs = (2500 + (widget.text.length * 50)).clamp(2500, 7000);
+
+    _dismissTimer = Timer(Duration(milliseconds: displayDurationMs), () {
       if (mounted) {
         _fadeController.reverse().then((_) {
           widget.onDismissed?.call();
