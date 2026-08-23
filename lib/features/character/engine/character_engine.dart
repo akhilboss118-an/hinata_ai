@@ -130,16 +130,25 @@ class CharacterEngine extends ConsumerWidget {
   }
 
   Widget _buildModelStage(CharacterState state) {
-    // If state.currentAnimation is 'idle', pass null so autoPlay plays the embedded Mixamo idle animation clip ('mixamo.com')
-    final String? activeAnim = (state.currentAnimation == 'idle' || state.currentAnimation.isEmpty)
-        ? null
-        : state.currentAnimation;
+    String modelPath;
+    final anim = state.currentAnimation.toLowerCase();
+
+    if (anim == 'wave' || anim == 'waving' || anim == 'hi' || anim == 'hello') {
+      modelPath = 'assets/models/waving_gesture.glb';
+    } else if (anim == 'clap' || anim == 'clapping' || anim == 'happy' || anim == 'excited') {
+      modelPath = 'assets/models/clapping.glb';
+    } else if (anim == 'sad' || anim == 'crying' || state.currentEmotion == CharacterEmotion.sad) {
+      modelPath = 'assets/models/sad_idle.glb';
+    } else {
+      modelPath = 'assets/models/standing_idle.glb';
+    }
 
     return Center(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 20),
         child: ModelViewer(
-          src: 'assets/models/standing_idle.glb',
+          key: ValueKey(modelPath),
+          src: modelPath,
           alt: 'Hinata 3D Character',
           ar: false,
           autoRotate: false,
@@ -150,7 +159,6 @@ class CharacterEngine extends ConsumerWidget {
           shadowIntensity: 1.0,
           backgroundColor: Colors.transparent,
           autoPlay: true,
-          animationName: activeAnim,
           cameraOrbit: '0deg 75deg auto',
           fieldOfView: '30deg',
         ),

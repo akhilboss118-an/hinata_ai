@@ -50,7 +50,7 @@ class CharacterController extends StateNotifier<CharacterState> {
     );
 
     // Automatically settle back to idle after reaction duration
-    _reactionResetTimer = Timer(const Duration(seconds: 4), () {
+    _reactionResetTimer = Timer(const Duration(seconds: 6), () {
       if (mounted) {
         state = state.copyWith(
           isTalking: false,

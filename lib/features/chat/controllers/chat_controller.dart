@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/chat_message.dart';
 import '../models/conversation.dart';
 import '../../character/engine/character_controller.dart';
+import '../../character/models/character_emotion.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/utils/date_utils.dart';
 
@@ -136,10 +137,25 @@ class ChatController extends StateNotifier<ChatState> {
         memories: memories,
       );
 
+      String targetAnimation = aiResponse.animation;
+      CharacterEmotion targetEmotion = aiResponse.emotion;
+
+      final lower = text.trim().toLowerCase();
+      if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey') || lower.contains('wave')) {
+        targetAnimation = 'wave';
+        targetEmotion = CharacterEmotion.happy;
+      } else if (lower.contains('happy') || lower.contains('clap') || lower.contains('excited') || lower.contains('yay') || lower.contains('great')) {
+        targetAnimation = 'clap';
+        targetEmotion = CharacterEmotion.excited;
+      } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('depressed') || lower.contains('unhappy')) {
+        targetAnimation = 'sad';
+        targetEmotion = CharacterEmotion.sad;
+      }
+
       // Trigger 3D Character Reaction (with speech bubble showing the reply)
       _charController.applyAiReaction(
-        emotion: aiResponse.emotion,
-        animation: aiResponse.animation,
+        emotion: targetEmotion,
+        animation: targetAnimation,
         intensity: aiResponse.intensity,
         speech: aiResponse.reply,
       );

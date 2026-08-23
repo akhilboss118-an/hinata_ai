@@ -44,6 +44,9 @@ flutter:
 
   assets:
     - assets/models/standing_idle.glb
+    - assets/models/waving_gesture.glb
+    - assets/models/clapping.glb
+    - assets/models/sad_idle.glb
     - assets/models/
     - assets/videos/
     - assets/images/
