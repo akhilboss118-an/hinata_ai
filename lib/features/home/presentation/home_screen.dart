@@ -351,8 +351,8 @@ class _TypewriterTextState extends State<_TypewriterText> {
     _displayedText = '';
     int currentIndex = 0;
 
-    // Smoother speed: 25ms per character for natural text animation
-    _timer = Timer.periodic(const Duration(milliseconds: 25), (timer) {
+    // Crisp speed: 20ms per character for natural typewriter effect
+    _timer = Timer.periodic(const Duration(milliseconds: 20), (timer) {
       if (currentIndex < widget.text.length) {
         if (mounted) {
           setState(() {
@@ -377,7 +377,7 @@ class _TypewriterTextState extends State<_TypewriterText> {
     return Text(
       _displayedText,
       style: widget.style,
-      maxLines: 4,
+      maxLines: 5,
       overflow: TextOverflow.ellipsis,
     );
   }
@@ -409,7 +409,7 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
     super.initState();
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 400),
     );
     _opacityAnimation = CurvedAnimation(
       parent: _fadeController,
@@ -432,12 +432,14 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
   void _scheduleFadeOut() {
     _dismissTimer?.cancel();
     
-    // Dynamic Reading Duration:
-    // Short texts: 2.5 seconds
-    // Long texts: 2.5s base + 50ms per character, capped at 7.0 seconds max
-    final int displayDurationMs = (2500 + (widget.text.length * 50)).clamp(2500, 7000);
+    // Dynamic Reading Duration calculation:
+    // 1. Typing animation takes (length * 20ms)
+    // 2. Reading hold time: 2.0 seconds for short replies up to 5.0 - 6.0 seconds for long replies
+    final int typingDurationMs = widget.text.length * 20;
+    final int readingDelayMs = (2000 + (widget.text.length * 35)).clamp(2000, 6000);
+    final int totalDurationMs = typingDurationMs + readingDelayMs;
 
-    _dismissTimer = Timer(Duration(milliseconds: displayDurationMs), () {
+    _dismissTimer = Timer(Duration(milliseconds: totalDurationMs), () {
       if (mounted) {
         _fadeController.reverse().then((_) {
           widget.onDismissed?.call();
