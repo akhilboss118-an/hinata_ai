@@ -2,6 +2,10 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/assets/models/:path*",
+      "destination": "/assets/assets/models/:path*"
+    },
+    {
       "source": "/((?!assets/|canvaskit/|icons/|.*\\.js|.*\\.png|.*\\.json|.*\\.glb|.*\\.fbx|.*\\.mp4|.*\\.webm|.*\\.css|.*\\.html|.*\\.otf|.*\\.ttf).*)",
       "destination": "/index.html"
     }
