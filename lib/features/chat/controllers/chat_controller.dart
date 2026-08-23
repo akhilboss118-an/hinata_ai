@@ -217,11 +217,30 @@ class ChatController extends StateNotifier<ChatState> {
       debugPrint('ChatController error: $e');
       _charController.setThinking(false);
 
-      // Still provide a fallback response so the user sees something
+      final String fallbackText;
+      final String errStr = e.toString().toLowerCase();
+
+      if (errStr.contains('socketexception') ||
+          errStr.contains('network') ||
+          errStr.contains('offline') ||
+          errStr.contains('failed to host') ||
+          errStr.contains('clientexception')) {
+        fallbackText = "Arey mowa, check your internet connection ra! 🌐 status offline";
+      } else {
+        fallbackText = "I think I missed something, can you repeat again? 😊";
+      }
+
+      _charController.applyAiReaction(
+        emotion: CharacterEmotion.surprised,
+        animation: 'talking',
+        intensity: 0.7,
+        speech: fallbackText,
+      );
+
       final fallbackMsg = ChatMessage(
         messageId: _uuid.v4(),
         sender: 'hinata',
-        text: "Arey mowa nen unna kadha 💙 Oka second aagu, malli cheppu!",
+        text: fallbackText,
         timestamp: DateTime.now(),
       );
       _localMessages.add(fallbackMsg);
