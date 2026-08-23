@@ -72,30 +72,26 @@
       if (!cleanText) return;
 
       var utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.15; // Natural pleasant pitch for Hinata
+      utterance.rate = 1.05; // Slightly lively speaking rate (Vizag girl chat rhythm)
+      utterance.pitch = 1.25; // Energetic, pleasant female pitch
 
       var voices = window.speechSynthesis.getVoices();
       
-      // Smart voice picker: look for natural Indian English / Telugu female voices first
-      var preferredVoice = voices.find(v => (
-        v.lang === 'te-IN' || 
-        v.lang === 'en-IN' || 
-        v.name.includes('India') || 
-        v.name.includes('Heera') || 
-        v.name.includes('Neerja') || 
-        v.name.includes('Veena') ||
-        v.name.includes('Google हिन्दी') ||
-        v.name.includes('Google UK English Female') ||
-        v.name.includes('Zira')
-      ));
-
-      if (!preferredVoice) {
-        preferredVoice = voices.find(v => v.name.toLowerCase().includes('female') || v.lang.includes('en'));
-      }
+      // Visakhapatnam / Coastal Andhra girl voice priority chain:
+      // 1. Native Telugu India voice (te-IN)
+      // 2. Clear Indian English female voice (en-IN)
+      // 3. Indian female regional voices (Heera, Neerja, Veena, Sangeeta)
+      var preferredVoice = voices.find(v => v.lang === 'te-IN' || v.lang === 'te_IN') ||
+                           voices.find(v => (v.lang === 'en-IN' || v.lang === 'en_IN') && v.name.toLowerCase().includes('female')) ||
+                           voices.find(v => v.name.includes('India') || v.name.includes('Heera') || v.name.includes('Neerja') || v.name.includes('Veena')) ||
+                           voices.find(v => v.lang.includes('in') || v.lang.includes('te')) ||
+                           voices.find(v => v.name.toLowerCase().includes('female'));
 
       if (preferredVoice) {
         utterance.voice = preferredVoice;
+        utterance.lang = preferredVoice.lang;
+      } else {
+        utterance.lang = 'en-IN';
       }
 
       window.speechSynthesis.speak(utterance);
