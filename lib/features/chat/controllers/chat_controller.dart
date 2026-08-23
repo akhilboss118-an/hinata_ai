@@ -129,8 +129,23 @@ class ChatController extends StateNotifier<ChatState> {
     _charController.setThinking(true);
 
     try {
-      // Fetch recent context & long-term memories
+      // Fetch recent conversation history with proper role mapping (excluding current userMsg)
+      final conversationHistory = _localMessages
+          .where((m) => m.messageId != userMsg.messageId)
+          .toList()
+          .reversed
+          .take(6)
+          .toList()
+          .reversed
+          .map((m) => {
+                'role': m.isUser ? 'user' : 'assistant',
+                'content': m.text,
+              })
+          .toList();
+
       final recentHistory = _localMessages
+          .where((m) => m.messageId != userMsg.messageId)
+          .toList()
           .reversed
           .take(6)
           .map((m) => '${m.isUser ? "User" : "Hinata"}: ${m.text}')
@@ -145,7 +160,7 @@ class ChatController extends StateNotifier<ChatState> {
       if (_groqService.isConfigured) {
         aiResponse = await _groqService.generateCompanionResponse(
           userMessage: text,
-          recentHistory: recentHistory,
+          conversationHistory: conversationHistory,
           memories: memories,
         );
       } else {
