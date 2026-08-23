@@ -120,27 +120,46 @@
 
     window.currentAudioElement = null;
 
-    window.playAudioBase64 = function (base64Data) {
-      if (window.isVoiceMuted) return;
+    window.playAudioBase64 = function (base64Data, onEnd) {
+      if (window.isVoiceMuted) {
+        if (onEnd) onEnd();
+        return;
+      }
       window.stopAllSpeech();
 
       try {
         var audio = new Audio('data:audio/mpeg;base64,' + base64Data);
         window.currentAudioElement = audio;
+        audio.onended = function () {
+          window.currentAudioElement = null;
+          if (onEnd) onEnd();
+        };
+        audio.onerror = function () {
+          window.currentAudioElement = null;
+          if (onEnd) onEnd();
+        };
         audio.play().catch(function(e) {
           console.warn('Audio autoplay blocked or failed:', e);
+          if (onEnd) onEnd();
         });
       } catch (err) {
         console.error('Audio playback error:', err);
+        if (onEnd) onEnd();
       }
     };
 
-    window.speakSpiderMan = function (text) {
-      if (!('speechSynthesis' in window) || window.isVoiceMuted) return;
+    window.speakSpiderMan = function (text, onEnd) {
+      if (!('speechSynthesis' in window) || window.isVoiceMuted) {
+        if (onEnd) onEnd();
+        return;
+      }
       window.stopAllSpeech();
 
       var cleaned = cleanForSpeechHinata(text);
-      if (!cleaned) return;
+      if (!cleaned) {
+        if (onEnd) onEnd();
+        return;
+      }
 
       var voices = availableVoices.length ? availableVoices : (window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
       // Look for young energetic male voices
@@ -156,6 +175,12 @@
       if (spideyVoice) {
         u.voice = spideyVoice;
       }
+      u.onend = function () {
+        if (onEnd) onEnd();
+      };
+      u.onerror = function () {
+        if (onEnd) onEnd();
+      };
       window.speechSynthesis.speak(u);
     };
 

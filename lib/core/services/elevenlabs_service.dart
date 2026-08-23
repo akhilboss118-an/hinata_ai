@@ -22,8 +22,11 @@ class ElevenLabsService {
   bool get isConfigured => apiKey.isNotEmpty;
 
   /// Speaks text using Spider-Man voice via ElevenLabs HD with automatic browser fallback
-  Future<void> speakSpiderMan(String text) async {
-    if (text.trim().isEmpty) return;
+  Future<void> speakSpiderMan(String text, {VoidCallback? onFinished}) async {
+    if (text.trim().isEmpty) {
+      onFinished?.call();
+      return;
+    }
 
     // Clean text for speech: remove emojis and markdown
     final clean = text
@@ -32,7 +35,10 @@ class ElevenLabsService {
         .replaceAll(RegExp(r'\s{2,}'), ' ')
         .trim();
 
-    if (clean.isEmpty) return;
+    if (clean.isEmpty) {
+      onFinished?.call();
+      return;
+    }
 
     try {
       if (kIsWeb) {
@@ -55,7 +61,12 @@ class ElevenLabsService {
 
         if (response.statusCode == 200) {
           final base64Audio = base64Encode(response.bodyBytes);
-          js.context.callMethod('playAudioBase64', [base64Audio]);
+          js.context.callMethod('playAudioBase64', [
+            base64Audio,
+            js.allowInterop(() {
+              onFinished?.call();
+            }),
+          ]);
           return;
         } else {
           debugPrint('ElevenLabs returned ${response.statusCode}: falling back to browser Spider-Man voice');
@@ -67,7 +78,14 @@ class ElevenLabsService {
 
     // Fallback: Web Speech Spider-Man voice
     if (kIsWeb) {
-      js.context.callMethod('speakSpiderMan', [clean]);
+      js.context.callMethod('speakSpiderMan', [
+        clean,
+        js.allowInterop(() {
+          onFinished?.call();
+        }),
+      ]);
+    } else {
+      onFinished?.call();
     }
   }
 

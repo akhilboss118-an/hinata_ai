@@ -451,8 +451,7 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
     );
 
     _fadeController.forward();
-    _scheduleFadeOut();
-    _playVoice();
+    _playVoiceAndSchedule();
   }
 
   @override
@@ -460,46 +459,38 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text) {
       _fadeController.forward();
-      _scheduleFadeOut();
-      _playVoice();
+      _playVoiceAndSchedule();
     }
   }
 
-  void _playVoice() {
-    if (kIsWeb) {
-      ElevenLabsService().speakSpiderMan(widget.text);
-    }
-  }
-
-  void _scheduleFadeOut() {
+  void _playVoiceAndSchedule() {
     _dismissTimer?.cancel();
-    
-    // Typing animation duration (20ms per character)
-    final int typingDurationMs = widget.text.length * 20;
 
-    // Reading hold duration scaled by reply size:
-    // Short (<= 35 chars): 4.0 seconds
-    // Medium (36 - 85 chars): 4.0 to 6.0 seconds
-    // Long (>= 86 chars): 6.0 to 10.0 seconds (8 to 10s for full replies)
+    // Safe fallback duration in case audio is muted or blocked
     final int len = widget.text.length;
-    final int readingDelayMs;
-    if (len <= 35) {
-      readingDelayMs = 4000;
-    } else if (len <= 85) {
-      readingDelayMs = 4000 + ((len - 35) * 40);
-    } else {
-      readingDelayMs = (6000 + ((len - 85) * 55)).clamp(6000, 10000);
-    }
-
-    final int totalDurationMs = typingDurationMs + readingDelayMs;
-
-    _dismissTimer = Timer(Duration(milliseconds: totalDurationMs), () {
-      if (mounted) {
-        _fadeController.reverse().then((_) {
-          widget.onDismissed?.call();
-        });
-      }
+    final int fallbackDelayMs = (6000 + (len * 80)).clamp(6000, 20000);
+    _dismissTimer = Timer(Duration(milliseconds: fallbackDelayMs), () {
+      _finishAndDismiss();
     });
+
+    if (kIsWeb) {
+      ElevenLabsService().speakSpiderMan(widget.text, onFinished: () {
+        if (!mounted) return;
+        _dismissTimer?.cancel();
+        // Dialogue audio completed: keep visible for 1.8s buffer then fade out
+        _dismissTimer = Timer(const Duration(milliseconds: 1800), () {
+          _finishAndDismiss();
+        });
+      });
+    }
+  }
+
+  void _finishAndDismiss() {
+    if (mounted) {
+      _fadeController.reverse().then((_) {
+        widget.onDismissed?.call();
+      });
+    }
   }
 
   @override
