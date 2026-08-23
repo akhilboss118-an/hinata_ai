@@ -147,8 +147,14 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
       modelPath = 'assets/models/waving_gesture.glb';
     } else if (anim == 'clap' || anim == 'clapping' || anim == 'happy' || anim == 'excited') {
       modelPath = 'assets/models/clapping.glb';
+    } else if (anim == 'disappointed' || anim == 'annoyed' || anim == 'pout' || anim == 'disappoint' || state.currentEmotion == CharacterEmotion.annoyed) {
+      modelPath = 'assets/models/disappointed.glb';
     } else if (anim == 'sad' || anim == 'crying' || state.currentEmotion == CharacterEmotion.sad) {
       modelPath = 'assets/models/sad_idle.glb';
+    } else if (state.isTalking || anim == 'talk' || anim == 'talking' || anim == 'speech') {
+      modelPath = (state.interactionCount % 2 == 0)
+          ? 'assets/models/talking.glb'
+          : 'assets/models/talking_1.glb';
     } else {
       modelPath = 'assets/models/standing_idle.glb';
     }

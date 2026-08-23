@@ -137,7 +137,7 @@ class ChatController extends StateNotifier<ChatState> {
         memories: memories,
       );
 
-      String targetAnimation = aiResponse.animation;
+      String targetAnimation = aiResponse.animation.isEmpty ? 'talking' : aiResponse.animation;
       CharacterEmotion targetEmotion = aiResponse.emotion;
 
       final lower = text.trim().toLowerCase();
@@ -147,9 +147,14 @@ class ChatController extends StateNotifier<ChatState> {
       } else if (lower.contains('happy') || lower.contains('clap') || lower.contains('excited') || lower.contains('yay') || lower.contains('great')) {
         targetAnimation = 'clap';
         targetEmotion = CharacterEmotion.excited;
+      } else if (lower.contains('disappointed') || lower.contains('disappoint') || lower.contains('bad') || lower.contains('hate') || lower.contains('pout')) {
+        targetAnimation = 'disappointed';
+        targetEmotion = CharacterEmotion.annoyed;
       } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('depressed') || lower.contains('unhappy')) {
         targetAnimation = 'sad';
         targetEmotion = CharacterEmotion.sad;
+      } else {
+        targetAnimation = 'talking';
       }
 
       // Trigger 3D Character Reaction (with speech bubble showing the reply)

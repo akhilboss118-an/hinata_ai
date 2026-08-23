@@ -1,9 +1,10 @@
+import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:ui';
 
 import 'package:hinata_ai/app/theme/app_colors.dart';
 import 'package:hinata_ai/features/character/engine/character_controller.dart';
@@ -199,16 +200,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(width: 10),
           Flexible(
-            child: Text(
-              text,
+            child: _TypewriterText(
+              key: ValueKey(text),
+              text: text,
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 height: 1.35,
                 color: Colors.white,
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -365,6 +365,78 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         backgroundColor: AppColors.surfaceCardHover,
         duration: const Duration(seconds: 1),
       ),
+    );
+  }
+}
+
+// ──────────────────────── TYPEWRITER ANIMATION WIDGET ─────────────────────
+
+class _TypewriterText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+  final Duration charDuration;
+
+  const _TypewriterText({
+    super.key,
+    required this.text,
+    required this.style,
+    this.charDuration = const Duration(milliseconds: 30),
+  });
+
+  @override
+  State<_TypewriterText> createState() => _TypewriterTextState();
+}
+
+class _TypewriterTextState extends State<_TypewriterText> {
+  String _displayedText = '';
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTyping();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TypewriterText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      _startTyping();
+    }
+  }
+
+  void _startTyping() {
+    _timer?.cancel();
+    _displayedText = '';
+    int currentIndex = 0;
+
+    _timer = Timer.periodic(widget.charDuration, (timer) {
+      if (currentIndex < widget.text.length) {
+        if (mounted) {
+          setState(() {
+            _displayedText += widget.text[currentIndex];
+          });
+        }
+        currentIndex++;
+      } else {
+        _timer?.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _displayedText,
+      style: widget.style,
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }
