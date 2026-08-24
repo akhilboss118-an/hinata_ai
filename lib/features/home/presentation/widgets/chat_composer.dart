@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../app/theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../../app/theme/app_radius.dart';
-import '../../../../app/theme/app_typography.dart';
+import '../../../../core/services/voice_input_service.dart';
 
-/// Floating bottom input composer bar for messaging Hinata
+/// Floating bottom input composer bar with Stitch design and voice input
 class ChatComposer extends StatefulWidget {
   final ValueChanged<String> onSubmitted;
   final VoidCallback? onMicTap;
@@ -23,6 +23,7 @@ class ChatComposer extends StatefulWidget {
 class _ChatComposerState extends State<ChatComposer> {
   final TextEditingController _controller = TextEditingController();
   bool _hasText = false;
+  bool _isListening = false;
 
   @override
   void initState() {
@@ -45,6 +46,49 @@ class _ChatComposerState extends State<ChatComposer> {
     }
   }
 
+  void _handleVoiceToggle() async {
+    if (widget.onMicTap != null) {
+      widget.onMicTap!();
+      return;
+    }
+
+    final voiceService = VoiceInputService();
+    if (_isListening) {
+      voiceService.stopListening();
+      setState(() => _isListening = false);
+      return;
+    }
+
+    setState(() => _isListening = true);
+
+    await voiceService.startListening(
+      onResult: (text) {
+        if (!mounted) return;
+        setState(() {
+          _isListening = false;
+          _controller.text = text;
+        });
+        _handleSend();
+      },
+      onError: (error) {
+        if (!mounted) return;
+        setState(() => _isListening = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error, style: GoogleFonts.inter(fontSize: 13)),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF1E2838),
+          ),
+        );
+      },
+      onStateChanged: (listening) {
+        if (mounted && _isListening != listening) {
+          setState(() => _isListening = listening);
+        }
+      },
+    );
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -54,43 +98,91 @@ class _ChatComposerState extends State<ChatComposer> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard.withValues(alpha: 0.95),
+        color: const Color(0xFF101622).withValues(alpha: 0.92),
         borderRadius: AppRadius.roundedFull,
-        border: Border.all(color: AppColors.borderSubtle, width: 1.5),
+        border: Border.all(
+          color: _isListening
+              ? const Color(0xFF64D5F4).withValues(alpha: 0.6)
+              : Colors.white.withValues(alpha: 0.12),
+          width: _isListening ? 1.5 : 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            color: _isListening
+                ? const Color(0xFF64D5F4).withValues(alpha: 0.25)
+                : Colors.black.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         children: [
           // Voice Input Mic Button
-          IconButton(
-            icon: const Icon(Icons.mic_none_rounded, color: AppColors.primaryLight),
-            onPressed: widget.isEnabled ? widget.onMicTap : null,
-            splashRadius: 20,
-            tooltip: 'Voice Input',
+          Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: widget.isEnabled ? _handleVoiceToggle : null,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _isListening
+                      ? const Color(0xFF004B6E)
+                      : const Color(0xFF182230),
+                  border: Border.all(
+                    color: _isListening
+                        ? const Color(0xFF64D5F4)
+                        : const Color(0xFF2B3A4E),
+                    width: 1,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                    color: _isListening
+                        ? const Color(0xFF64D5F4)
+                        : const Color(0xFF85BAE3),
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
           ),
+
+          const SizedBox(width: 10),
 
           // Message Input Field
           Expanded(
             child: TextField(
               controller: _controller,
               enabled: widget.isEnabled,
-              style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                color: Colors.white,
+              ),
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                hintText: 'Message Hinata...',
-                hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
+                hintText: _isListening
+                    ? 'Listening... Speak now 🎙️'
+                    : 'Talk to Spider-Man...',
+                hintStyle: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: _isListening
+                      ? const Color(0xFF85BAE3)
+                      : const Color(0xFF758394),
+                  fontStyle: _isListening ? FontStyle.italic : FontStyle.normal,
+                ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                 isDense: true,
               ),
               onSubmitted: (_) => _handleSend(),
@@ -99,17 +191,22 @@ class _ChatComposerState extends State<ChatComposer> {
 
           // Send Action Button
           Container(
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _hasText && widget.isEnabled
-                  ? AppColors.primary
-                  : AppColors.borderSubtle,
+                  ? const Color(0xFF004B6E)
+                  : const Color(0xFF1E2838),
+              border: Border.all(
+                color: _hasText && widget.isEnabled
+                    ? const Color(0xFF85BAE3).withValues(alpha: 0.4)
+                    : Colors.white.withValues(alpha: 0.05),
+              ),
             ),
             child: IconButton(
-              icon: const Icon(Icons.arrow_upward_rounded, size: 20),
-              color: _hasText && widget.isEnabled ? Colors.white : AppColors.textDisabled,
+              icon: const Icon(Icons.arrow_upward_rounded, size: 18),
+              color: _hasText && widget.isEnabled ? Colors.white : Colors.white38,
               padding: EdgeInsets.zero,
               onPressed: _hasText && widget.isEnabled ? _handleSend : null,
             ),

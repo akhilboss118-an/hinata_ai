@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:hinata_ai/app/theme/app_colors.dart';
 import 'package:hinata_ai/app/theme/app_shadows.dart';
@@ -203,38 +202,6 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
             fieldOfView: isAcrobatic ? '38deg' : '30deg',
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSpeechBubble(String text, CharacterEmotion emotion) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCardHover.withValues(alpha: 0.96),
-        borderRadius: AppRadius.roundedLg,
-        border: Border.all(
-          color: emotion.color.withValues(alpha: 0.7),
-          width: 1.5,
-        ),
-        boxShadow: const [AppShadows.cardSubtle],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(emotion.emoji, style: const TextStyle(fontSize: 22)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

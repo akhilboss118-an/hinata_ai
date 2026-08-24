@@ -98,7 +98,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
             // ── APP TITLE ──
             Text(
-              'READY TO STEP ON SPID',
+              'READY TO STEP ON SPIDEY',
               style: GoogleFonts.manrope(
                 color: Colors.white,
                 fontSize: 22,

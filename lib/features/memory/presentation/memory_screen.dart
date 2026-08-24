@@ -74,9 +74,6 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-    final uid = authState is Authenticated ? authState.user.uid : '';
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(

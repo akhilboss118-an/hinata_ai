@@ -139,7 +139,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     // ── HEADER: Title & Subtitle ──
                     Text(
-                      'READY TO STEP ON SPID',
+                      'READY TO STEP ON SPIDEY',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.manrope(
                         fontSize: 22,

@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:hinata_ai/app/theme/app_colors.dart';
 import 'package:hinata_ai/core/services/elevenlabs_service.dart';
+import 'package:hinata_ai/core/services/voice_input_service.dart';
 import 'package:hinata_ai/features/character/engine/character_controller.dart';
 import 'package:hinata_ai/features/character/engine/character_engine.dart';
 import 'package:hinata_ai/features/chat/controllers/chat_controller.dart';
@@ -17,7 +18,7 @@ import 'widgets/side_menu_drawer.dart';
 import 'dart:js' as js;
 
 /// Stitch Homepage: transparent top bar, full-screen character stage with
-/// ethereal rings, and the glass-panel chat bar with AI Companion badge.
+/// ethereal rings, and the glass-panel chat bar with integrated voice input.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -31,6 +32,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
   bool _isVoiceMuted = false;
+  bool _isListening = false;
 
   @override
   void initState() {
@@ -210,6 +212,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  void _toggleVoiceInput() async {
+    final voiceService = VoiceInputService();
+    if (_isListening) {
+      voiceService.stopListening();
+      setState(() => _isListening = false);
+      return;
+    }
+
+    setState(() => _isListening = true);
+
+    await voiceService.startListening(
+      onResult: (text) {
+        if (!mounted) return;
+        setState(() {
+          _isListening = false;
+          _textController.text = text;
+        });
+        // Auto-send recognized speech
+        _sendMessage();
+      },
+      onError: (error) {
+        if (!mounted) return;
+        setState(() => _isListening = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error, style: GoogleFonts.inter(fontSize: 13)),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF1E2838),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      },
+      onStateChanged: (listening) {
+        if (mounted && _isListening != listening) {
+          setState(() => _isListening = listening);
+        }
+      },
+    );
+  }
+
   // ──────────────────── BOTTOM GLASS CHAT PANEL ──────────────────────
 
   Widget _buildBottomInteractionArea() {
@@ -218,126 +260,168 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
         child: Center(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceGlass,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.10),
-                    width: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF101622).withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: _isListening
+                          ? const Color(0xFF64D5F4).withValues(alpha: 0.6)
+                          : (focused
+                              ? const Color(0xFF85BAE3).withValues(alpha: 0.35)
+                              : Colors.white.withValues(alpha: 0.12)),
+                      width: _isListening ? 1.5 : 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _isListening
+                            ? const Color(0xFF64D5F4).withValues(alpha: 0.35)
+                            : (focused
+                                ? const Color(0xFF004B6E).withValues(alpha: 0.40)
+                                : Colors.black.withValues(alpha: 0.35)),
+                        offset: const Offset(0, 12),
+                        blurRadius: 36,
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(
-                          alpha: focused ? 0.40 : 0.15),
-                      offset: const Offset(0, 20),
-                      blurRadius: 40,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    // AI Companion badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(999),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.25),
-                            offset: const Offset(0, 1),
-                            blurRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'AI',
-                            style: GoogleFonts.jetBrainsMono(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Companion',
-                            style: GoogleFonts.jetBrainsMono(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black.withValues(alpha: 0.8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: Row(
+                    children: [
+                      // Voice Input Mic Button (Stitch Theme)
+                      _buildVoiceButton(),
 
-                    const SizedBox(width: 12),
+                      const SizedBox(width: 10),
 
-                    // Input field
-                    Expanded(
-                      child: TextField(
-                        controller: _textController,
-                        focusNode: _focusNode,
-                        cursorColor: AppColors.primaryLight,
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          height: 28 / 18,
-                          color: AppColors.textPrimary,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Say something to Hinata~ ♡',
-                          hintStyle: GoogleFonts.inter(
-                            fontSize: 18,
-                            color: AppColors.textSecondary,
-                          ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          isDense: true,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                        onSubmitted: (_) => _sendMessage(),
-                      ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    // Send action button
-                    Material(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(999),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(999),
-                        onTap: _sendMessage,
-                        child: const SizedBox(
-                          width: 44,
-                          height: 44,
-                          child: Icon(
-                            Icons.arrow_upward_rounded,
-                            size: 22,
+                      // Input text field
+                      Expanded(
+                        child: TextField(
+                          controller: _textController,
+                          focusNode: _focusNode,
+                          cursorColor: const Color(0xFF85BAE3),
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            height: 1.4,
                             color: Colors.white,
                           ),
+                          decoration: InputDecoration(
+                            hintText: _isListening
+                                ? 'Listening... Speak now 🎙️'
+                                : 'Talk to Spider-Man...',
+                            hintStyle: GoogleFonts.inter(
+                              fontSize: 15,
+                              color: _isListening
+                                  ? const Color(0xFF85BAE3)
+                                  : const Color(0xFF758394),
+                              fontStyle: _isListening
+                                  ? FontStyle.italic
+                                  : FontStyle.normal,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 11,
+                            ),
+                          ),
+                          onSubmitted: (_) => _sendMessage(),
                         ),
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(width: 8),
+
+                      // Send action button
+                      Material(
+                        color: const Color(0xFF004B6E),
+                        borderRadius: BorderRadius.circular(999),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(999),
+                          onTap: _sendMessage,
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: _hasText
+                                    ? const [Color(0xFF004B6E), Color(0xFF296580)]
+                                    : const [Color(0xFF1E2838), Color(0xFF263244)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.arrow_upward_rounded,
+                                size: 20,
+                                color: _hasText ? Colors.white : Colors.white54,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Small responsive microphone button with pulse animations for voice input
+  Widget _buildVoiceButton() {
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: _toggleVoiceInput,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _isListening
+                ? const Color(0xFF004B6E)
+                : const Color(0xFF182230),
+            border: Border.all(
+              color: _isListening
+                  ? const Color(0xFF64D5F4)
+                  : const Color(0xFF2B3A4E),
+              width: _isListening ? 1.8 : 1,
+            ),
+            boxShadow: _isListening
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF64D5F4).withValues(alpha: 0.5),
+                      blurRadius: 14,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : [],
+          ),
+          child: Center(
+            child: Icon(
+              _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+              size: 21,
+              color: _isListening
+                  ? const Color(0xFF64D5F4)
+                  : const Color(0xFF85BAE3),
             ),
           ),
         ),

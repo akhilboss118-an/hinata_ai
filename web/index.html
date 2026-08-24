@@ -195,26 +195,112 @@
       }
     };
 
-    window.startSpeechRecognition = function (onResult, onError) {
-      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        if (onError) onError('Speech Recognition not supported in this browser');
-        return;
-      }
-      var recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      // 'en-IN' & 'te-IN' dual recognition support
-      recognition.lang = (navigator.language && navigator.language.includes('te')) ? 'te-IN' : 'en-IN';
+    window.activeSpeechRecognition = null;
+    window.isHinataListening = false;
 
-      recognition.onresult = function (event) {
-        var transcript = event.results[0][0].transcript;
-        if (onResult) onResult(transcript);
-      };
-      recognition.onerror = function (event) {
-        if (onError) onError(event.error);
-      };
-      recognition.start();
+    window.hinataSpeech = {
+      hasSupport: function() {
+        return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+      }
+    };
+
+    window.startHinataSpeech = function(onResult, onError, onStateChange) {
+      var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        if (onError) onError('Speech recognition is not supported in this browser. Please use text input.');
+        return false;
+      }
+
+      // Stop previous instance if active
+      if (window.activeSpeechRecognition) {
+        try {
+          window.activeSpeechRecognition.abort();
+        } catch(e) {}
+        window.activeSpeechRecognition = null;
+      }
+
+      try {
+        var recognition = new SpeechRec();
+        window.activeSpeechRecognition = recognition;
+        window.isHinataListening = true;
+
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        // Auto-detect browser/user preferred language or default to en-US/en-IN
+        var lang = (navigator.languages && navigator.languages[0]) || navigator.language || 'en-US';
+        recognition.lang = lang;
+
+        recognition.onstart = function() {
+          window.isHinataListening = true;
+          if (onStateChange) onStateChange(true);
+        };
+
+        recognition.onresult = function(event) {
+          if (event.results && event.results.length > 0) {
+            var transcript = event.results[0][0].transcript;
+            if (transcript && transcript.trim().length > 0) {
+              if (onResult) onResult(transcript.trim());
+            }
+          }
+        };
+
+        recognition.onerror = function(event) {
+          window.isHinataListening = false;
+          if (onStateChange) onStateChange(false);
+          window.activeSpeechRecognition = null;
+
+          var errType = event.error || 'unknown';
+          var userFriendlyMsg = 'Speech error: ' + errType;
+
+          if (errType === 'not-allowed' || errType === 'service-not-allowed') {
+            userFriendlyMsg = 'Microphone permission denied. Please allow microphone access in browser settings.';
+          } else if (errType === 'no-speech') {
+            userFriendlyMsg = 'No speech detected. Please tap the mic and try again.';
+          } else if (errType === 'audio-capture') {
+            userFriendlyMsg = 'No microphone was found or microphone is busy.';
+          } else if (errType === 'network') {
+            userFriendlyMsg = 'Speech service network error. Please check your internet.';
+          } else if (errType === 'aborted') {
+            return; // Clean user abort
+          }
+
+          if (onError) onError(userFriendlyMsg);
+        };
+
+        recognition.onend = function() {
+          window.isHinataListening = false;
+          if (onStateChange) onStateChange(false);
+          window.activeSpeechRecognition = null;
+        };
+
+        recognition.start();
+        return true;
+      } catch (err) {
+        window.isHinataListening = false;
+        window.activeSpeechRecognition = null;
+        if (onStateChange) onStateChange(false);
+        if (onError) onError('Could not initialize microphone: ' + err);
+        return false;
+      }
+    };
+
+    window.stopHinataSpeech = function() {
+      window.isHinataListening = false;
+      if (window.activeSpeechRecognition) {
+        try {
+          window.activeSpeechRecognition.stop();
+        } catch(e) {
+          try { window.activeSpeechRecognition.abort(); } catch(_) {}
+        }
+        window.activeSpeechRecognition = null;
+      }
+    };
+
+    // Backward-compatibility wrapper
+    window.startSpeechRecognition = function(onResult, onError) {
+      return window.startHinataSpeech(onResult, onError, null);
     };
   </script>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
