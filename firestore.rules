@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for security and authorization
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User Profile Rules
+    match /users/{userId} {
+      // Authenticated users can read profiles
+      allow read: if isAuthenticated();
+
+      // Only the user themselves can create their profile doc
+      allow create: if isOwner(userId)
+                    && request.resource.data.uid == request.auth.uid;
+
+      // Only the user themselves can update their profile doc
+      allow update: if isOwner(userId)
+                    && request.resource.data.uid == resource.data.uid
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'createdAt']));
+
+      // Deletion is blocked from client-side (managed via backend/cloud functions)
+      allow delete: if false;
+
+      // User Private Sub-collections (chats, diary, memory, settings)
+      match /{subcollection}/{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+  }
+}

@@ -61,12 +61,8 @@ class ElevenLabsService {
 
         if (response.statusCode == 200) {
           final base64Audio = base64Encode(response.bodyBytes);
-          js.context.callMethod('playAudioBase64', [
-            base64Audio,
-            js.allowInterop(() {
-              onFinished?.call();
-            }),
-          ]);
+          js.context.callMethod('playAudioBase64', [base64Audio]);
+          onFinished?.call();
           return;
         } else {
           debugPrint('ElevenLabs returned ${response.statusCode}: falling back to browser Spider-Man voice');
@@ -78,12 +74,8 @@ class ElevenLabsService {
 
     // Fallback: Web Speech Spider-Man voice
     if (kIsWeb) {
-      js.context.callMethod('speakSpiderMan', [
-        clean,
-        js.allowInterop(() {
-          onFinished?.call();
-        }),
-      ]);
+      js.context.callMethod('speakSpiderMan', [clean]);
+      onFinished?.call();
     } else {
       onFinished?.call();
     }

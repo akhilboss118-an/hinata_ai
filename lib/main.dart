@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -24,9 +27,14 @@ void main() async {
     ),
   );
 
-  // NOTE: Firebase initialization skipped — using placeholder keys.
-  // Will be re-enabled once real Firebase project credentials are provided.
-  // Chat works via Gemini API directly; storage is in-memory for now.
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase initialization notice: $e');
+  }
 
   runApp(
     const ProviderScope(

@@ -51,17 +51,24 @@ class UserProfile {
   }
 
   factory UserProfile.fromMap(Map<String, dynamic> map, String uid) {
+    DateTime parseDate(dynamic val) {
+      if (val == null) return DateTime.now();
+      if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
+      try {
+        // Handle Firestore Timestamp dynamically
+        return (val as dynamic).toDate() as DateTime;
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+
     return UserProfile(
       uid: uid,
       displayName: map['displayName'] as String? ?? 'Friend',
       email: map['email'] as String? ?? '',
-      photoUrl: map['photoUrl'] as String?,
-      createdAt: map['createdAt'] != null
-          ? DateTime.tryParse(map['createdAt'] as String) ?? DateTime.now()
-          : DateTime.now(),
-      lastSeenAt: map['lastSeenAt'] != null
-          ? DateTime.tryParse(map['lastSeenAt'] as String) ?? DateTime.now()
-          : DateTime.now(),
+      photoUrl: map['photoUrl'] as String? ?? map['photoURL'] as String?,
+      createdAt: parseDate(map['createdAt']),
+      lastSeenAt: parseDate(map['lastSeenAt'] ?? map['lastLoginAt']),
       timezone: map['timezone'] as String? ?? DateTime.now().timeZoneName,
     );
   }

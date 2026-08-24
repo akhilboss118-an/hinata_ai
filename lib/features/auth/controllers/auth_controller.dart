@@ -39,7 +39,50 @@ class AuthController extends StateNotifier<AuthState> {
     state = const AuthLoading(statusMessage: 'Signing in with Google...');
     try {
       final profile = await _authService.signInWithGoogle();
-      state = Authenticated(user: profile);
+      if (profile != null) {
+        state = Authenticated(user: profile);
+      } else {
+        // User cancelled Google sign-in dialog
+        state = const Unauthenticated();
+      }
+    } catch (e) {
+      state = AuthError(e.toString());
+    }
+  }
+
+  /// Initiates Email & Password Sign-In flow
+  Future<void> signInWithEmailPassword(String email, String password) async {
+    if (email.trim().isEmpty || password.trim().isEmpty) {
+      state = const AuthError('Please enter both email and password.');
+      return;
+    }
+    state = const AuthLoading(statusMessage: 'Signing in...');
+    try {
+      final profile = await _authService.signInWithEmailPassword(email, password);
+      if (profile != null) {
+        state = Authenticated(user: profile);
+      } else {
+        state = const Unauthenticated();
+      }
+    } catch (e) {
+      state = AuthError(e.toString());
+    }
+  }
+
+  /// Initiates Email & Password Sign-Up flow
+  Future<void> signUpWithEmailPassword(String email, String password) async {
+    if (email.trim().isEmpty || password.trim().isEmpty) {
+      state = const AuthError('Please enter both email and password.');
+      return;
+    }
+    state = const AuthLoading(statusMessage: 'Creating account...');
+    try {
+      final profile = await _authService.signUpWithEmailPassword(email, password);
+      if (profile != null) {
+        state = Authenticated(user: profile);
+      } else {
+        state = const Unauthenticated();
+      }
     } catch (e) {
       state = AuthError(e.toString());
     }

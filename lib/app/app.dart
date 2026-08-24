@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
-import '../features/home/presentation/home_screen.dart';
+import '../features/auth/presentation/splash_screen.dart';
 
 /// Main Hinata AI application root widget
 class HinataApp extends StatelessWidget {
@@ -12,7 +12,7 @@ class HinataApp extends StatelessWidget {
       title: 'Hinata AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const HomeScreen(),
+      home: const SplashScreen(),
     );
   }
 }

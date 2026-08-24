@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../app/theme/app_colors.dart';
-import '../../../app/theme/app_typography.dart';
-import '../../../app/theme/app_shadows.dart';
-import '../../../core/constants/app_constants.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/auth_state.dart';
 import 'login_screen.dart';
 import '../../home/presentation/home_screen.dart';
 
-/// Splash screen showing Hinata AI brand with session verification
+/// App Startup Loading & Session Verification Screen with Stitch Aesthetics
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -28,7 +25,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _checkSession() async {
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // Smooth initial loading duration
+    await Future.delayed(const Duration(milliseconds: 1400));
     if (!mounted) return;
 
     try {
@@ -44,7 +42,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         pageBuilder: (_, __, ___) => targetWidget,
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
-        transitionDuration: const Duration(milliseconds: 500),
+        transitionDuration: const Duration(milliseconds: 600),
       ),
     );
   }
@@ -52,78 +50,103 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFF090D14),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Glowing Heart Icon
+            // ── GLOWING EMBLEM ──
             Container(
-              width: 90,
-              height: 90,
+              width: 104,
+              height: 104,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.surfaceCard,
-                boxShadow: const [AppShadows.neonPink, AppShadows.neonViolet],
+                color: const Color(0xFF00334D),
+                border: Border.all(color: const Color(0xFF85BAE3).withValues(alpha: 0.5), width: 2.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF004B6E).withValues(alpha: 0.8),
+                    blurRadius: 36,
+                    spreadRadius: 6,
+                  ),
+                  BoxShadow(
+                    color: const Color(0xFF85BAE3).withValues(alpha: 0.3),
+                    blurRadius: 16,
+                  ),
+                ],
               ),
-              alignment: Alignment.center,
-              child: const Text('💙', style: TextStyle(fontSize: 44)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(52),
+                child: Image.network(
+                  'https://lh3.googleusercontent.com/aida-public/AB6AXuAHKd34Tulqg2Oig1ywKWy9TqIeKW53XMYA1rZdBPS0z2eg20FIS6JmGBqybQLCVkpmZlPQXxKnOaYIJGYk48bPDjb7sF6MV09sUXcSlfsP8ke_Wc8n7CjJNxO2f7d0SSByRDGGskY8WE-Qph2fQiQ_WvTLE0f_xDMtw4_hYvS9xdjWNK4CA-u4T5hi5myuGGCcr9DaVNNeNHaw6FBOzygj3vhmNKeCCun3hVx3TcDchV5lTb_4TsE7kA',
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Text('🕷️', style: TextStyle(fontSize: 48)),
+                  ),
+                ),
+              ),
             )
                 .animate(onPlay: (c) => c.repeat(reverse: true))
                 .scale(
-                  begin: const Offset(0.95, 0.95),
-                  end: const Offset(1.08, 1.08),
-                  duration: 1000.ms,
+                  begin: const Offset(0.96, 0.96),
+                  end: const Offset(1.05, 1.05),
+                  duration: 1100.ms,
+                  curve: Curves.easeInOut,
                 ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
 
-            // App Title
+            // ── APP TITLE ──
             Text(
-              AppConstants.appName.toUpperCase(),
-              style: AppTypography.displayLarge.copyWith(
-                color: AppColors.textPrimary,
-                letterSpacing: 4,
+              'READY TO STEP ON SPID',
+              style: GoogleFonts.manrope(
+                color: Colors.white,
+                fontSize: 22,
+                letterSpacing: 2,
                 fontWeight: FontWeight.w800,
               ),
             )
                 .animate()
                 .fadeIn(duration: 600.ms)
-                .slideY(begin: 0.3, end: 0, duration: 600.ms),
+                .slideY(begin: 0.2, end: 0, duration: 600.ms),
 
             const SizedBox(height: 8),
 
-            // Subtitle
+            // ── SUBTITLE ──
             Text(
-              AppConstants.appTagline,
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.primaryLight,
-                letterSpacing: 0.5,
+              'Digital Stillness • Companion Engine',
+              style: GoogleFonts.inter(
+                color: const Color(0xFF85BAE3),
+                fontSize: 13,
+                letterSpacing: 0.6,
+                fontWeight: FontWeight.w500,
               ),
             )
                 .animate()
                 .fadeIn(delay: 200.ms, duration: 600.ms),
 
-            const SizedBox(height: 56),
+            const SizedBox(height: 52),
 
-            // Pulsing Loading Indicator
+            // ── LOADING INDICATOR ──
             const SizedBox(
-              width: 24,
-              height: 24,
+              width: 26,
+              height: 26,
               child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryLight),
+                strokeWidth: 2.4,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF85BAE3)),
               ),
             )
                 .animate()
-                .fadeIn(delay: 400.ms, duration: 500.ms),
+                .fadeIn(delay: 350.ms, duration: 500.ms),
 
             const SizedBox(height: 16),
 
             Text(
-              'Loading...',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textMuted,
+              'Connecting...',
+              style: GoogleFonts.inter(
+                color: const Color(0xFF556272),
+                fontSize: 12,
+                letterSpacing: 0.4,
               ),
             ),
           ],
