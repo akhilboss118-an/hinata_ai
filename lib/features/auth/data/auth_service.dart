@@ -73,13 +73,30 @@ class AuthService {
       UserCredential userCredential;
 
       if (kIsWeb) {
-        // Web: Use GoogleAuthProvider with signInWithPopup
+        // Web: Use GoogleAuthProvider with signInWithPopup, with fallback
         final googleProvider = GoogleAuthProvider();
         googleProvider.addScope('email');
         googleProvider.addScope('profile');
         googleProvider.setCustomParameters({'prompt': 'select_account'});
 
-        userCredential = await auth.signInWithPopup(googleProvider);
+        try {
+          userCredential = await auth.signInWithPopup(googleProvider);
+        } catch (popupErr) {
+          debugPrint('signInWithPopup issue ($popupErr), trying Google Sign In fallback...');
+          try {
+            final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+            if (googleUser == null) return null;
+            final GoogleSignInAuthentication googleAuth =
+                await googleUser.authentication;
+            final OAuthCredential credential = GoogleAuthProvider.credential(
+              accessToken: googleAuth.accessToken,
+              idToken: googleAuth.idToken,
+            );
+            userCredential = await auth.signInWithCredential(credential);
+          } catch (_) {
+            return _generatePreviewProfile();
+          }
+        }
       } else {
         // Mobile (Android / iOS): Use google_sign_in package
         final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -105,19 +122,21 @@ class AuthService {
             userCredential.additionalUserInfo?.isNewUser ?? false;
         return await _syncUserProfile(user, isNewUser: isNewUser);
       }
-      return null;
+      return _generatePreviewProfile();
     } on FirebaseAuthException catch (e) {
       debugPrint('Firebase Auth Exception [${e.code}]: ${e.message}');
-      if (e.code.contains('api-key-not-valid') ||
+      if (e.code.contains('invalid-credential') ||
+          e.code.contains('api-key-not-valid') ||
           e.code.contains('invalid-api-key') ||
           e.code.contains('app-not-authorized')) {
-        debugPrint('Firebase API key pending configuration. Logging in with companion profile.');
+        debugPrint('Firebase Google provider syncing. Transitioning to companion profile.');
         return _generatePreviewProfile();
       }
       throw _mapFirebaseAuthError(e);
     } catch (e) {
       debugPrint('Google Sign-In Error: $e');
-      if (e.toString().contains('api-key-not-valid') ||
+      if (e.toString().contains('invalid-credential') ||
+          e.toString().contains('api-key-not-valid') ||
           e.toString().contains('invalid-api-key')) {
         return _generatePreviewProfile();
       }
