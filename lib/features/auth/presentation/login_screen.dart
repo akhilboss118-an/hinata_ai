@@ -20,6 +20,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isSignUp = false;
   bool _obscurePassword = true;
+  bool _showEmailForm = false;
 
   @override
   void dispose() {
@@ -139,12 +140,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     // ── HEADER: Title & Subtitle ──
                     Text(
-                      'READY TO STEP ON SPIDEY',
+                      'Welcome back',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.manrope(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.2,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
                         color: Colors.white,
                       ),
                     )
@@ -155,12 +156,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 8),
 
                     Text(
-                      _isSignUp
-                          ? 'Create an account to start your journey'
-                          : 'Sign in to continue to your account',
+                      'Sign in to continue to your account',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
-                        fontSize: 14,
+                        fontSize: 15,
                         color: const Color(0xFF939DA8),
                         fontWeight: FontWeight.w400,
                       ),
@@ -168,9 +167,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         .animate()
                         .fadeIn(delay: 250.ms, duration: 400.ms),
 
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 32),
 
-                    // ── PRIMARY ACTION: Google SSO Button ──
+                    // ── PRIMARY ACTION: Google SSO Button (Full Pill) ──
                     _buildGoogleSignInButton(
                       isLoading: isLoading,
                       onPressed: () => authController.signInWithGoogle(),
@@ -179,120 +178,70 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         .fadeIn(delay: 350.ms, duration: 450.ms)
                         .slideY(begin: 0.15, end: 0),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 14),
 
-                    // ── DIVIDER: OR ──
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Divider(color: Color(0xFF263244), thickness: 1),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'OR',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF758394),
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                        ),
-                        const Expanded(
-                          child: Divider(color: Color(0xFF263244), thickness: 1),
-                        ),
-                      ],
+                    // ── SECONDARY ACTION: Continue as Guest (Full Pill) ──
+                    _buildContinueAsGuestButton(
+                      onPressed: () => authController.continueAsGuest(),
                     )
                         .animate()
-                        .fadeIn(delay: 450.ms, duration: 400.ms),
+                        .fadeIn(delay: 400.ms, duration: 450.ms)
+                        .slideY(begin: 0.15, end: 0),
 
                     const SizedBox(height: 24),
 
-                    // ── SECONDARY ACTION: Email & Password Form ──
-                    _buildInputField(
-                      label: 'Email',
-                      hint: 'you@example.com',
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      icon: Icons.alternate_email_rounded,
-                    ),
+                    // ── EXPANDABLE / TOGGLE: Email & Password ──
+                    if (_showEmailForm) ...[
+                      const SizedBox(height: 8),
+                      _buildInputField(
+                        label: 'Email',
+                        hint: 'you@example.com',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        icon: Icons.alternate_email_rounded,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildPasswordField(),
+                      const SizedBox(height: 20),
+                      _buildSubmitButton(
+                        isLoading: isLoading,
+                        text: _isSignUp ? 'Create Account' : 'Sign In',
+                        onPressed: _submitForm,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
-                    const SizedBox(height: 18),
-
-                    _buildPasswordField(),
-
-                    const SizedBox(height: 24),
-
-                    // ── SUBMIT BUTTON ──
-                    _buildSubmitButton(
-                      isLoading: isLoading,
-                      text: _isSignUp ? 'Create Account' : 'Sign In',
-                      onPressed: _submitForm,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // ── FOOTER: Switch between Sign In / Sign Up ──
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _isSignUp
-                              ? 'Already have an account? '
-                              : "Don't have an account? ",
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _showEmailForm = !_showEmailForm;
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Text(
+                          _showEmailForm
+                              ? 'Hide email sign-in'
+                              : 'Or sign in with email & password',
                           style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: const Color(0xFF8895A5),
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF85BAE3),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _isSignUp = !_isSignUp;
-                            });
-                          },
-                          child: Text(
-                            _isSignUp ? 'Sign in' : 'Sign up',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF85BAE3),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 28),
 
-                    // ── GUEST EXPLORE MODE ──
-                    GestureDetector(
-                      onTap: () => authController.continueAsGuest(),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(999),
-                          color: const Color(0xFF090D14),
-                          border: Border.all(
-                            color: const Color(0xFF85BAE3).withValues(alpha: 0.25),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.flash_on_rounded, size: 15, color: Color(0xFF64D5F4)),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Instant Preview / Guest Mode',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF64D5F4),
-                              ),
-                            ),
-                          ],
-                        ),
+                    // ── FOOTER: Production by Little Hearts ──
+                    Text(
+                      'Production by Little Hearts',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                        color: const Color(0xFF758394),
                       ),
                     ),
                   ],
@@ -366,7 +315,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2.2,
+                       strokeWidth: 2.2,
                       valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00334D)),
                     ),
                   ),
@@ -387,6 +336,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ],
                 ),
+        ),
+      ),
+    );
+  }
+
+  /// Outlined Pill Continue as Guest Button (Stitch design)
+  Widget _buildContinueAsGuestButton({
+    required VoidCallback onPressed,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          width: double.infinity,
+          height: 52,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: const Color(0xFF85BAE3).withValues(alpha: 0.6),
+              width: 1.5,
+            ),
+          ),
+          child: Text(
+            'Continue as Guest',
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF85BAE3),
+              letterSpacing: 0.1,
+            ),
+          ),
         ),
       ),
     );
