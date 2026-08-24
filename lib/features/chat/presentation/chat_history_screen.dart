@@ -5,10 +5,13 @@ import '../../../app/theme/app_typography.dart';
 import '../../../app/theme/app_radius.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../shared/widgets/glass_card.dart';
-import '../models/conversation.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../../auth/controllers/auth_state.dart';
+import '../controllers/chat_controller.dart';
+import '../models/chat_message.dart';
 import 'conversation_screen.dart';
 
-/// Screen displaying conversations grouped chronologically by date
+/// Screen displaying conversations and stored chat history
 class ChatHistoryScreen extends ConsumerStatefulWidget {
   const ChatHistoryScreen({super.key});
 
@@ -17,135 +20,178 @@ class ChatHistoryScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatHistoryScreenState extends ConsumerState<ChatHistoryScreen> {
-  List<Conversation> _conversations = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadHistory();
-  }
-
-  Future<void> _loadHistory() async {
-    // Chat history will be loaded from Firestore once Firebase is configured.
-    // For now, showing empty list (in-memory messages are in the chat controller).
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final chatState = ref.watch(chatControllerProvider);
+    final authState = ref.watch(authControllerProvider);
+    final uid = authState is Authenticated ? authState.user.uid : 'guest_user';
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFF090D14),
       appBar: AppBar(
+        backgroundColor: const Color(0xFF101622),
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text('Chat History', style: AppTypography.titleLarge),
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(AppColors.primary)),
-            )
-          : _conversations.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('💬', style: TextStyle(fontSize: 48)),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No conversation history yet',
-                        style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+        title: Text(
+          'Chat History 💬',
+          style: AppTypography.titleLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        actions: [
+          if (chatState.messages.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep_rounded, color: Color(0xFFFF5252)),
+              tooltip: 'Clear History',
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: const Color(0xFF101622),
+                    title: const Text('Clear Chat History?', style: TextStyle(color: Colors.white)),
+                    content: const Text(
+                      'This will delete all saved conversation messages from your device.',
+                      style: TextStyle(color: Color(0xFF758394)),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFBA1A1A)),
+                        onPressed: () {
+                          ref.read(chatControllerProvider.notifier).clearHistory(uid);
+                          Navigator.pop(ctx);
+                        },
+                        child: const Text('Clear All', style: TextStyle(color: Colors.white)),
                       ),
                     ],
                   ),
+                );
+              },
+            ),
+        ],
+      ),
+      body: chatState.isLoading
+          ? const Center(
+              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Color(0xFF85BAE3))),
+            )
+          : chatState.messages.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('💬', style: TextStyle(fontSize: 52)),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No conversation history yet',
+                          style: AppTypography.titleMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Start talking or typing to Spider-Man / Hinata on the home screen — all your conversations will be securely stored here!',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodySmall.copyWith(color: const Color(0xFF758394)),
+                        ),
+                      ],
+                    ),
+                  ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  itemCount: _conversations.length,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: chatState.messages.length,
                   itemBuilder: (context, index) {
-                    final conv = _conversations[index];
-                    final header = AppDateUtils.getRelativeDateHeader(conv.createdAt);
-                    final showHeader = index == 0 ||
-                        AppDateUtils.getRelativeDateHeader(_conversations[index - 1].createdAt) != header;
+                    final msg = chatState.messages[index];
+                    final isUser = msg.isUser;
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (showHeader)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16, bottom: 8, left: 4),
-                            child: Text(
-                              header,
-                              style: AppTypography.labelSmall.copyWith(
-                                color: AppColors.primaryLight,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
-                              ),
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isUser
+                            ? const Color(0xFF004B6E).withValues(alpha: 0.3)
+                            : const Color(0xFF101622),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isUser
+                              ? const Color(0xFF85BAE3).withValues(alpha: 0.3)
+                              : const Color(0xFF1E2838),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isUser
+                                  ? const Color(0xFF004B6E)
+                                  : const Color(0xFF1E2838),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isUser ? Icons.person_rounded : Icons.smart_toy_rounded,
+                              color: isUser ? Colors.white : const Color(0xFF85BAE3),
+                              size: 16,
                             ),
                           ),
-                        GlassCard(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(16),
-                          borderRadius: AppRadius.roundedMd,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const ConversationScreen()),
-                            );
-                          },
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.15),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.chat_bubble_outline_rounded,
-                                  color: AppColors.primaryLight,
-                                  size: 18,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      conv.title,
-                                      style: AppTypography.titleMedium.copyWith(fontSize: 15),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                      isUser ? 'You' : 'Hinata / Spider-Man',
+                                      style: TextStyle(
+                                        color: isUser ? const Color(0xFF85BAE3) : Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12,
+                                      ),
                                     ),
-                                    const SizedBox(height: 4),
                                     Text(
-                                      conv.lastMessagePreview,
-                                      style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                      AppDateUtils.formatTime(msg.timestamp),
+                                      style: const TextStyle(
+                                        color: Color(0xFF758394),
+                                        fontSize: 10,
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                AppDateUtils.formatDisplay(conv.createdAt),
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: AppColors.textDisabled,
-                                  fontSize: 10,
+                                const SizedBox(height: 6),
+                                Text(
+                                  msg.text,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: Colors.white,
+                                    height: 1.35,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     );
                   },
                 ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF004B6E),
+        foregroundColor: Colors.white,
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ConversationScreen()),
+          );
+        },
+        icon: const Icon(Icons.forum_rounded, size: 20),
+        label: const Text('Open Full Chat'),
+      ),
     );
   }
 }

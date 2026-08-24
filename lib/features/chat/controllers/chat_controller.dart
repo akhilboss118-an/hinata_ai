@@ -1,10 +1,15 @@
+import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../models/chat_message.dart';
 import '../models/conversation.dart';
 import '../../character/engine/character_controller.dart';
 import '../../character/models/character_emotion.dart';
+import '../../memory/models/memory_item.dart';
+import '../../memory/repositories/memory_repository.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/services/groq_service.dart';
 import '../../../core/utils/date_utils.dart';
@@ -19,9 +24,14 @@ final geminiServiceProvider = Provider<GeminiService>((ref) {
   );
 });
 
+final memoryRepoProvider = Provider<MemoryRepository>((ref) {
+  return MemoryRepository();
+});
+
 class ChatState {
   final Conversation? activeConversation;
   final List<ChatMessage> messages;
+  final List<MemoryItem> memories;
   final bool isLoading;
   final bool isSending;
   final String? error;
@@ -29,6 +39,7 @@ class ChatState {
   const ChatState({
     this.activeConversation,
     this.messages = const [],
+    this.memories = const [],
     this.isLoading = false,
     this.isSending = false,
     this.error,
@@ -37,6 +48,7 @@ class ChatState {
   ChatState copyWith({
     Conversation? activeConversation,
     List<ChatMessage>? messages,
+    List<MemoryItem>? memories,
     bool? isLoading,
     bool? isSending,
     String? error,
@@ -44,6 +56,7 @@ class ChatState {
     return ChatState(
       activeConversation: activeConversation ?? this.activeConversation,
       messages: messages ?? this.messages,
+      memories: memories ?? this.memories,
       isLoading: isLoading ?? this.isLoading,
       isSending: isSending ?? this.isSending,
       error: error,
@@ -56,11 +69,13 @@ final chatControllerProvider =
   final groqService = ref.watch(groqServiceProvider);
   final geminiService = ref.watch(geminiServiceProvider);
   final charController = ref.watch(characterControllerProvider.notifier);
+  final memoryRepo = ref.watch(memoryRepoProvider);
 
   return ChatController(
     groqService: groqService,
     geminiService: geminiService,
     characterController: charController,
+    memoryRepository: memoryRepo,
   );
 });
 
@@ -68,49 +83,97 @@ class ChatController extends StateNotifier<ChatState> {
   final GroqService _groqService;
   final GeminiService _geminiService;
   final CharacterController _charController;
+  final MemoryRepository _memoryRepository;
   final Uuid _uuid = const Uuid();
 
-  // In-memory storage for messages (replaces Firestore while Firebase is unavailable)
   final List<ChatMessage> _localMessages = [];
-  // In-memory memory store
-  final List<String> _localMemories = [];
+  final List<MemoryItem> _localMemories = [];
 
   ChatController({
     required GroqService groqService,
     required GeminiService geminiService,
     required CharacterController characterController,
+    required MemoryRepository memoryRepository,
   })  : _groqService = groqService,
         _geminiService = geminiService,
         _charController = characterController,
+        _memoryRepository = memoryRepository,
         super(const ChatState());
 
-  /// Initializes conversation for a given user UID and date (in-memory)
+  String _chatStorageKey(String uid) => 'hinata_chat_history_$uid';
+
+  /// Initializes conversation, loads persistent chat history from LocalStorage & Firestore
   Future<void> initConversation(String uid, DateTime date) async {
     state = state.copyWith(isLoading: true);
     final dateKey = AppDateUtils.toDateKey(date);
     final conversationId = _uuid.v4();
     final now = DateTime.now();
+
     final conv = Conversation(
       conversationId: conversationId,
       title: 'Chat on ${AppDateUtils.formatDisplay(date)}',
       dateKey: dateKey,
       createdAt: now,
       updatedAt: now,
-      lastMessagePreview: 'Started conversation with Hinata',
+      lastMessagePreview: 'Started conversation with Spider-Man / Hinata',
     );
+
+    // 1. Load persistent chat history from SharedPreferences
+    _localMessages.clear();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_chatStorageKey(uid));
+      if (raw != null && raw.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(raw) as List<dynamic>;
+        final loaded = list
+            .map((m) => ChatMessage.fromMap(m as Map<String, dynamic>, m['messageId'] as String? ?? ''))
+            .toList();
+        _localMessages.addAll(loaded);
+      }
+    } catch (_) {}
+
+    // 2. Load memories from MemoryRepository
+    try {
+      final mems = await _memoryRepository.getMemories(uid);
+      _localMemories.clear();
+      _localMemories.addAll(mems);
+    } catch (_) {}
+
     state = state.copyWith(
       activeConversation: conv,
       messages: List.from(_localMessages),
+      memories: List.from(_localMemories),
       isLoading: false,
     );
   }
 
-  /// Sends a message and triggers Gemini AI companion structured generation
+  /// Persists current messages to local storage and Firestore
+  Future<void> _persistMessages(String uid) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = jsonEncode(_localMessages.map((m) => m.toMap()).toList());
+      await prefs.setString(_chatStorageKey(uid), encoded);
+    } catch (_) {}
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+      for (final msg in _localMessages.take(10)) {
+        await firestore
+            .collection('users')
+            .doc(uid)
+            .collection('messages')
+            .doc(msg.messageId)
+            .set(msg.toMap());
+      }
+    } catch (_) {}
+  }
+
+  /// Sends a message, triggers AI generation, extracts memories, and persists history
   Future<void> sendMessage({
     required String uid,
     required String text,
   }) async {
-    if (state.activeConversation == null || text.trim().isEmpty) return;
+    if (text.trim().isEmpty) return;
 
     final now = DateTime.now();
     final userMsg = ChatMessage(
@@ -120,21 +183,37 @@ class ChatController extends StateNotifier<ChatState> {
       timestamp: now,
     );
 
-    // Add user message to local store
+    // 1. Add user message to store & save
     _localMessages.add(userMsg);
     state = state.copyWith(
       isSending: true,
       messages: List.from(_localMessages),
     );
+    _persistMessages(uid);
     _charController.setThinking(true);
 
+    // 2. Automatic Memory Extraction from user input
     try {
-      // Fetch recent conversation history with proper role mapping (excluding current userMsg)
+      final newMemory = await _memoryRepository.autoExtractAndSaveMemory(
+        uid: uid,
+        text: text,
+      );
+      if (newMemory != null) {
+        _localMemories.insert(0, newMemory);
+        state = state.copyWith(memories: List.from(_localMemories));
+        debugPrint('Auto-extracted memory to vault: ${newMemory.content}');
+      }
+    } catch (e) {
+      debugPrint('Memory extraction notice: $e');
+    }
+
+    try {
+      // Build conversation context & memory injects
       final conversationHistory = _localMessages
           .where((m) => m.messageId != userMsg.messageId)
           .toList()
           .reversed
-          .take(6)
+          .take(8)
           .toList()
           .reversed
           .map((m) => {
@@ -147,13 +226,13 @@ class ChatController extends StateNotifier<ChatState> {
           .where((m) => m.messageId != userMsg.messageId)
           .toList()
           .reversed
-          .take(6)
+          .take(8)
           .map((m) => '${m.isUser ? "User" : "Hinata"}: ${m.text}')
           .toList()
           .reversed
           .toList();
 
-      final memories = _localMemories.take(5).toList();
+      final memoryStrings = _localMemories.take(10).map((m) => m.content).toList();
 
       final stopwatch = Stopwatch()..start();
 
@@ -163,40 +242,47 @@ class ChatController extends StateNotifier<ChatState> {
         aiResponse = await _groqService.generateCompanionResponse(
           userMessage: text,
           conversationHistory: conversationHistory,
-          memories: memories,
+          memories: memoryStrings,
         );
       } else {
         aiResponse = await _geminiService.generateCompanionResponse(
           userMessage: text,
           recentHistory: recentHistory,
-          memories: memories,
+          memories: memoryStrings,
         );
       }
 
-      // Smooth Thinking buffer: ensure thinking animation plays cleanly for at least 1.2s without rapid flickering
+      // Smooth Thinking buffer
       final int elapsed = stopwatch.elapsedMilliseconds;
-      if (elapsed < 1200) {
-        await Future.delayed(Duration(milliseconds: 1200 - elapsed));
+      if (elapsed < 1000) {
+        await Future.delayed(Duration(milliseconds: 1000 - elapsed));
       }
 
-      // Trust AI-chosen animation & emotion first — only override if AI returned empty/idle
+      // Determine animation and emotion
       String targetAnimation = aiResponse.animation.isNotEmpty ? aiResponse.animation : 'talking';
       CharacterEmotion targetEmotion = aiResponse.emotion;
 
-      // Only apply keyword-based override if AI returned 'idle' or empty (fallback safety net)
       if (targetAnimation == 'idle' || targetAnimation.isEmpty) {
         final lower = text.trim().toLowerCase();
-        // English + Telugu keyword matching
-        if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey') || lower.contains('wave') || lower.contains('namaste')) {
+        if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey') || lower.contains('wave')) {
           targetAnimation = 'wave';
           targetEmotion = CharacterEmotion.happy;
-        } else if (lower.contains('happy') || lower.contains('clap') || lower.contains('excited') || lower.contains('yay') || lower.contains('great') || lower.contains('baaga') || lower.contains('super') || lower.contains('bagundi')) {
+        } else if (lower.contains('flip') || lower.contains('jump') || lower.contains('trick')) {
+          targetAnimation = 'front_flip';
+          targetEmotion = CharacterEmotion.excited;
+        } else if (lower.contains('land') || lower.contains('crouch') || lower.contains('hero')) {
+          targetAnimation = 'swing_landing';
+          targetEmotion = CharacterEmotion.excited;
+        } else if (lower.contains('dance') || lower.contains('party') || lower.contains('celebrate')) {
+          targetAnimation = 'wave_dance';
+          targetEmotion = CharacterEmotion.excited;
+        } else if (lower.contains('happy') || lower.contains('clap') || lower.contains('awesome') || lower.contains('great')) {
           targetAnimation = 'clap';
           targetEmotion = CharacterEmotion.excited;
-        } else if (lower.contains('disappointed') || lower.contains('bad') || lower.contains('hate') || lower.contains('bore') || lower.contains('boring') || lower.contains('istam ledu')) {
+        } else if (lower.contains('disappointed') || lower.contains('bad') || lower.contains('hate')) {
           targetAnimation = 'disappointed';
           targetEmotion = CharacterEmotion.annoyed;
-        } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('depressed') || lower.contains('badhaga') || lower.contains('edusthunna')) {
+        } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('depressed')) {
           targetAnimation = 'sad';
           targetEmotion = CharacterEmotion.sad;
         } else {
@@ -204,7 +290,7 @@ class ChatController extends StateNotifier<ChatState> {
         }
       }
 
-      // Trigger 3D Character Reaction (with speech bubble showing the reply)
+      // Trigger 3D Character Reaction (with guaranteed >6s hold)
       _charController.applyAiReaction(
         emotion: targetEmotion,
         animation: targetAnimation,
@@ -212,8 +298,8 @@ class ChatController extends StateNotifier<ChatState> {
         speech: aiResponse.reply,
       );
 
-      // Save Hinata AI response in local store
-      final hinataMsg = ChatMessage(
+      // Save AI message
+      final aiMsg = ChatMessage(
         messageId: _uuid.v4(),
         sender: 'hinata',
         text: aiResponse.reply,
@@ -223,38 +309,34 @@ class ChatController extends StateNotifier<ChatState> {
         intensity: aiResponse.intensity,
       );
 
-      _localMessages.add(hinataMsg);
+      _localMessages.add(aiMsg);
 
-      // Automatically extract and save memory candidate if found
+      // Save memory candidate if Gemini suggested one
       if (aiResponse.memoryCandidate != null &&
           aiResponse.memoryCandidate!.trim().isNotEmpty) {
-        _localMemories.add(aiResponse.memoryCandidate!.trim());
-        debugPrint('Memory saved: ${aiResponse.memoryCandidate}');
+        final item = await _memoryRepository.addMemory(
+          uid: uid,
+          content: aiResponse.memoryCandidate!.trim(),
+          category: 'important',
+        );
+        _localMemories.insert(0, item);
       }
+
+      // Persist all updated messages
+      await _persistMessages(uid);
 
       state = state.copyWith(
         isSending: false,
         messages: List.from(_localMessages),
+        memories: List.from(_localMemories),
       );
     } catch (e) {
       debugPrint('ChatController error: $e');
       _charController.setThinking(false);
 
-      final String fallbackText;
-      final String errStr = e.toString().toLowerCase();
-
-      if (errStr.contains('socketexception') ||
-          errStr.contains('network') ||
-          errStr.contains('offline') ||
-          errStr.contains('failed to host') ||
-          errStr.contains('clientexception')) {
-        fallbackText = "Arey mowa, signal/net sarriga ledu darka! Check your internet connection ra 🌐";
-      } else {
-        fallbackText = "I think I missed something, can you repeat again? 😊";
-      }
-
+      final fallbackText = "I'm always swinging around! How can I help you out today? 🕷️✨";
       _charController.applyAiReaction(
-        emotion: CharacterEmotion.surprised,
+        emotion: CharacterEmotion.happy,
         animation: 'talking',
         intensity: 0.7,
         speech: fallbackText,
@@ -267,12 +349,22 @@ class ChatController extends StateNotifier<ChatState> {
         timestamp: DateTime.now(),
       );
       _localMessages.add(fallbackMsg);
+      await _persistMessages(uid);
 
       state = state.copyWith(
         isSending: false,
         messages: List.from(_localMessages),
-        error: e.toString(),
       );
     }
+  }
+
+  /// Clears all chat history from local store and storage
+  Future<void> clearHistory(String uid) async {
+    _localMessages.clear();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_chatStorageKey(uid));
+    } catch (_) {}
+    state = state.copyWith(messages: []);
   }
 }

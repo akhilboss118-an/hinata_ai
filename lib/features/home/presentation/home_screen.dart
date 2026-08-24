@@ -13,6 +13,10 @@ import 'package:hinata_ai/core/services/voice_input_service.dart';
 import 'package:hinata_ai/features/character/engine/character_controller.dart';
 import 'package:hinata_ai/features/character/engine/character_engine.dart';
 import 'package:hinata_ai/features/chat/controllers/chat_controller.dart';
+import 'package:hinata_ai/features/auth/controllers/auth_controller.dart';
+import 'package:hinata_ai/features/auth/controllers/auth_state.dart';
+import 'package:hinata_ai/features/chat/presentation/chat_history_screen.dart';
+import 'package:hinata_ai/features/memory/presentation/memory_screen.dart';
 import 'widgets/side_menu_drawer.dart';
 
 import 'dart:js' as js;
@@ -46,12 +50,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  /// Initializes today's conversation so messages persist
-  void _ensureConversation() {
-    final chatState = ref.read(chatControllerProvider);
-    if (chatState.activeConversation != null) return;
+  String _getUid() {
+    final authState = ref.read(authControllerProvider);
+    if (authState is Authenticated) {
+      return authState.user.uid;
+    }
+    return 'guest_user';
+  }
 
-    const uid = 'hinata_user_preview_1';
+  /// Initializes conversation so messages and memories persist
+  void _ensureConversation() {
+    final uid = _getUid();
     ref.read(chatControllerProvider.notifier).initConversation(uid, DateTime.now());
   }
 
@@ -66,7 +75,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
-    const uid = 'hinata_user_preview_1';
+    final uid = _getUid();
 
     _textController.clear();
     _focusNode.unfocus();
@@ -98,10 +107,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   _buildTopBar(context),
                   const Spacer(),
-                  if (chatState.isSending || characterState.isThinking)
-                    _buildThinkingPill().animate().fadeIn(duration: 200.ms),
-                  if (characterState.isTalking && characterState.activeReactionText != null)
+
+                  // 3D Speech Reaction Subtitle Pill (auto-fading)
+                  if (characterState.activeReactionText != null &&
+                      characterState.activeReactionText!.isNotEmpty)
                     _buildSubtitleBubble(characterState.activeReactionText!),
+
+                  // Thinking pill
+                  if (characterState.isThinking) _buildThinkingPill(),
+
+                  // Glass Chat Input Bar
                   _buildBottomInteractionArea(),
                 ],
               ),
@@ -118,45 +133,100 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             IconButton(
               icon: const Icon(Icons.menu_rounded,
-                  color: AppColors.primaryLight, size: 28),
+                  color: Color(0xFF85BAE3), size: 28),
               tooltip: 'Open Menu',
               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
             ),
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceCard.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: _isVoiceMuted
-                      ? Colors.white24
-                      : AppColors.primary.withValues(alpha: 0.45),
+            Row(
+              children: [
+                // Memory Vault Quick Action
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF101622).withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: const Color(0xFF004B6E).withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.psychology_rounded,
+                      color: Color(0xFF85BAE3),
+                      size: 20,
+                    ),
+                    tooltip: 'Memory Vault 🧠',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const MemoryScreen()),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              child: IconButton(
-                icon: Icon(
-                  _isVoiceMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                  color: _isVoiceMuted ? Colors.white54 : AppColors.primaryLight,
-                  size: 22,
+
+                // Chat History Quick Action
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF101622).withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: const Color(0xFF004B6E).withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      color: Color(0xFF85BAE3),
+                      size: 19,
+                    ),
+                    tooltip: 'Chat History 💬',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ChatHistoryScreen()),
+                      );
+                    },
+                  ),
                 ),
-                tooltip: _isVoiceMuted ? 'Unmute Spider-Man Voice' : 'Mute Voice',
-                onPressed: () {
-                  setState(() {
-                    _isVoiceMuted = !_isVoiceMuted;
-                  });
-                  try {
-                    js.context['isVoiceMuted'] = _isVoiceMuted;
-                    if (_isVoiceMuted) {
-                      ElevenLabsService().stop();
-                    }
-                  } catch (_) {}
-                },
-              ),
+
+                // Voice Mute / Unmute
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF101622).withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: _isVoiceMuted
+                          ? Colors.white24
+                          : const Color(0xFF004B6E).withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      _isVoiceMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                      color: _isVoiceMuted ? Colors.white54 : const Color(0xFF85BAE3),
+                      size: 20,
+                    ),
+                    tooltip: _isVoiceMuted ? 'Unmute Spider-Man Voice' : 'Mute Voice',
+                    onPressed: () {
+                      setState(() {
+                        _isVoiceMuted = !_isVoiceMuted;
+                      });
+                      try {
+                        js.context['isVoiceMuted'] = _isVoiceMuted;
+                        if (_isVoiceMuted) {
+                          ElevenLabsService().stop();
+                        }
+                      } catch (_) {}
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
         ),

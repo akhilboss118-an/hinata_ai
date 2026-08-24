@@ -224,13 +224,16 @@
         window.activeSpeechRecognition = recognition;
         window.isHinataListening = true;
 
-        recognition.continuous = false;
-        recognition.interimResults = false;
+        recognition.continuous = true;
+        recognition.interimResults = true;
         recognition.maxAlternatives = 1;
 
         // Auto-detect browser/user preferred language or default to en-US/en-IN
         var lang = (navigator.languages && navigator.languages[0]) || navigator.language || 'en-US';
         recognition.lang = lang;
+
+        var fullTranscript = '';
+        var silenceTimer = null;
 
         recognition.onstart = function() {
           window.isHinataListening = true;
@@ -238,38 +241,56 @@
         };
 
         recognition.onresult = function(event) {
-          if (event.results && event.results.length > 0) {
-            var transcript = event.results[0][0].transcript;
-            if (transcript && transcript.trim().length > 0) {
-              if (onResult) onResult(transcript.trim());
+          var interimTranscript = '';
+          for (var i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              fullTranscript += event.results[i][0].transcript + ' ';
+            } else {
+              interimTranscript += event.results[i][0].transcript;
             }
           }
+          var current = (fullTranscript + interimTranscript).trim();
+          if (current.length > 0 && onResult) {
+            onResult(current);
+          }
+
+          // Auto-stop after 1.8 seconds of silence when user finishes speaking
+          if (silenceTimer) clearTimeout(silenceTimer);
+          silenceTimer = setTimeout(function() {
+            if (window.activeSpeechRecognition && window.isHinataListening && current.length > 0) {
+              try {
+                window.activeSpeechRecognition.stop();
+              } catch(e) {}
+            }
+          }, 1800);
         };
 
         recognition.onerror = function(event) {
+          if (silenceTimer) clearTimeout(silenceTimer);
+          var errType = event.error || 'unknown';
+
+          if (errType === 'no-speech' || errType === 'aborted') {
+            return; // Ignore silence or user stop
+          }
+
           window.isHinataListening = false;
           if (onStateChange) onStateChange(false);
           window.activeSpeechRecognition = null;
 
-          var errType = event.error || 'unknown';
           var userFriendlyMsg = 'Speech error: ' + errType;
-
           if (errType === 'not-allowed' || errType === 'service-not-allowed') {
             userFriendlyMsg = 'Microphone permission denied. Please allow microphone access in browser settings.';
-          } else if (errType === 'no-speech') {
-            userFriendlyMsg = 'No speech detected. Please tap the mic and try again.';
           } else if (errType === 'audio-capture') {
             userFriendlyMsg = 'No microphone was found or microphone is busy.';
           } else if (errType === 'network') {
             userFriendlyMsg = 'Speech service network error. Please check your internet.';
-          } else if (errType === 'aborted') {
-            return; // Clean user abort
           }
 
           if (onError) onError(userFriendlyMsg);
         };
 
         recognition.onend = function() {
+          if (silenceTimer) clearTimeout(silenceTimer);
           window.isHinataListening = false;
           if (onStateChange) onStateChange(false);
           window.activeSpeechRecognition = null;

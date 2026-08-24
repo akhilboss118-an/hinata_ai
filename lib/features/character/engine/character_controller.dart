@@ -52,8 +52,8 @@ class CharacterController extends StateNotifier<CharacterState> {
       activeReactionText: speech,
     );
 
-    // Natural single-play timing for reactions before returning to idle
-    final int durationMs = _getAnimationDurationMs(animation);
+    // Guaranteed animation hold duration > 6 seconds (7s - 10s based on speech length)
+    final int durationMs = _getAnimationDurationMs(animation, speech: speech);
 
     _reactionResetTimer = Timer(Duration(milliseconds: durationMs), () {
       if (mounted) {
@@ -65,27 +65,36 @@ class CharacterController extends StateNotifier<CharacterState> {
     });
   }
 
-  /// Returns exact single-play duration in milliseconds so animations never loop multiple times
-  int _getAnimationDurationMs(String animation) {
-    final anim = animation.toLowerCase();
-    if (anim.contains('flip')) {
-      return 2160; // 1 single front twist flip
-    } else if (anim.contains('landing') || anim.contains('swing')) {
-      return 1850; // 1 single superhero swing landing
-    } else if (anim.contains('wave') || anim == 'hi' || anim == 'hello') {
-      return 1500; // 1 single wave
-    } else if (anim.contains('clap')) {
-      return 1200; // 1 single clap
-    } else if (anim.contains('disappoint')) {
-      return 4000;
-    } else if (anim == 'sad' || anim == 'crying') {
-      return 4500;
-    } else if (anim.contains('think')) {
-      return 2500; // 1 smooth thinking stance
-    } else if (anim.contains('dance')) {
-      return 4500;
+  /// Returns reaction duration in milliseconds (guaranteed minimum 7000ms / 7 seconds)
+  int _getAnimationDurationMs(String animation, {String? speech}) {
+    // Calculate reading/speaking duration based on word count
+    int computedFromSpeech = 7000;
+    if (speech != null && speech.trim().isNotEmpty) {
+      final wordCount = speech.trim().split(RegExp(r'\s+')).length;
+      computedFromSpeech = max(7000, wordCount * 380);
     }
-    return 3000;
+
+    final anim = animation.toLowerCase();
+    int baseDuration = 7000;
+    if (anim.contains('dance')) {
+      baseDuration = 8500;
+    } else if (anim.contains('flip') || anim.contains('acrobatic')) {
+      baseDuration = 7200;
+    } else if (anim.contains('landing') || anim.contains('swing')) {
+      baseDuration = 7000;
+    } else if (anim.contains('wave') || anim == 'hi' || anim == 'hello') {
+      baseDuration = 7000;
+    } else if (anim.contains('clap')) {
+      baseDuration = 7000;
+    } else if (anim.contains('disappoint')) {
+      baseDuration = 7500;
+    } else if (anim == 'sad' || anim == 'crying') {
+      baseDuration = 8000;
+    } else if (anim.contains('think')) {
+      baseDuration = 7500;
+    }
+
+    return max(baseDuration, computedFromSpeech);
   }
 
   /// Handles Talking-Tom style interactive gesture triggers
@@ -145,8 +154,8 @@ class CharacterController extends StateNotifier<CharacterState> {
       affectionLevel: newAffection,
     );
 
-    // Reset animation exactly once animation finishes playing
-    final int singlePlayDurationMs = _getAnimationDurationMs(animation);
+    // Reset animation after reaction finishes (minimum 7 seconds)
+    final int singlePlayDurationMs = _getAnimationDurationMs(animation, speech: reactionText);
     _reactionResetTimer = Timer(Duration(milliseconds: singlePlayDurationMs), () {
       if (mounted) {
         state = state.copyWith(
