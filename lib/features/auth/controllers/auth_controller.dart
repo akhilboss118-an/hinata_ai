@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_service.dart';
+import '../models/user_profile.dart';
 import 'auth_state.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -98,4 +99,20 @@ class AuthController extends StateNotifier<AuthState> {
       state = AuthError(e.toString());
     }
   }
+
+  /// Enters instant guest / preview session
+  void continueAsGuest() {
+    final now = DateTime.now();
+    state = Authenticated(
+      user: UserProfile(
+        uid: 'hinata_guest_user',
+        displayName: 'Peter',
+        email: 'peter@hinata.ai',
+        createdAt: now,
+        lastSeenAt: now,
+        timezone: now.timeZoneName,
+      ),
+    );
+  }
 }
+

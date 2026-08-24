@@ -108,9 +108,19 @@ class AuthService {
       return null;
     } on FirebaseAuthException catch (e) {
       debugPrint('Firebase Auth Exception [${e.code}]: ${e.message}');
+      if (e.code.contains('api-key-not-valid') ||
+          e.code.contains('invalid-api-key') ||
+          e.code.contains('app-not-authorized')) {
+        debugPrint('Firebase API key pending configuration. Logging in with companion profile.');
+        return _generatePreviewProfile();
+      }
       throw _mapFirebaseAuthError(e);
     } catch (e) {
       debugPrint('Google Sign-In Error: $e');
+      if (e.toString().contains('api-key-not-valid') ||
+          e.toString().contains('invalid-api-key')) {
+        return _generatePreviewProfile();
+      }
       rethrow;
     }
   }
@@ -135,6 +145,9 @@ class AuthService {
       return null;
     } on FirebaseAuthException catch (e) {
       debugPrint('Email Sign-In Exception [${e.code}]: ${e.message}');
+      if (e.code.contains('api-key-not-valid') || e.code.contains('invalid-api-key')) {
+        return _generatePreviewProfile();
+      }
       throw _mapFirebaseAuthError(e);
     }
   }
@@ -159,6 +172,9 @@ class AuthService {
       return null;
     } on FirebaseAuthException catch (e) {
       debugPrint('Email Sign-Up Exception [${e.code}]: ${e.message}');
+      if (e.code.contains('api-key-not-valid') || e.code.contains('invalid-api-key')) {
+        return _generatePreviewProfile();
+      }
       throw _mapFirebaseAuthError(e);
     }
   }

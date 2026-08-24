@@ -263,6 +263,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 20),
+
+                    // ── GUEST EXPLORE MODE ──
+                    GestureDetector(
+                      onTap: () => authController.continueAsGuest(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(999),
+                          color: const Color(0xFF090D14),
+                          border: Border.all(
+                            color: const Color(0xFF85BAE3).withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.flash_on_rounded, size: 15, color: Color(0xFF64D5F4)),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Instant Preview / Guest Mode',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF64D5F4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

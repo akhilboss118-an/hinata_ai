@@ -19,27 +19,28 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDemoHinataApiKeyForWebTesting123',
-    appId: '1:123456789012:web:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'hinata-ai-companion',
-    authDomain: 'hinata-ai-companion.firebaseapp.com',
-    storageBucket: 'hinata-ai-companion.appspot.com',
+    apiKey: 'AIzaSyB1IQdRLXtU5iPSXRJK6aGaU0cmoOlOuSI',
+    appId: '1:769390720216:web:017d96366023738e4553ad',
+    messagingSenderId: '769390720216',
+    projectId: 'hinata-ai-cecd3-b498a',
+    authDomain: 'hinata-ai-cecd3-b498a.firebaseapp.com',
+    storageBucket: 'hinata-ai-cecd3-b498a.firebasestorage.app',
+    measurementId: 'G-VGSZFLMP0B',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDemoHinataApiKeyForAndroidTesting123',
-    appId: '1:123456789012:android:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'hinata-ai-companion',
-    storageBucket: 'hinata-ai-companion.appspot.com',
+    apiKey: 'AIzaSyB1IQdRLXtU5iPSXRJK6aGaU0cmoOlOuSI',
+    appId: '1:769390720216:android:017d96366023738e4553ad',
+    messagingSenderId: '769390720216',
+    projectId: 'hinata-ai-cecd3-b498a',
+    storageBucket: 'hinata-ai-cecd3-b498a.firebasestorage.app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDemoHinataApiKeyForWindowsTesting123',
-    appId: '1:123456789012:windows:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'hinata-ai-companion',
-    storageBucket: 'hinata-ai-companion.appspot.com',
+    apiKey: 'AIzaSyB1IQdRLXtU5iPSXRJK6aGaU0cmoOlOuSI',
+    appId: '1:769390720216:windows:017d96366023738e4553ad',
+    messagingSenderId: '769390720216',
+    projectId: 'hinata-ai-cecd3-b498a',
+    storageBucket: 'hinata-ai-cecd3-b498a.firebasestorage.app',
   );
 }
