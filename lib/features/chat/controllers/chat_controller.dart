@@ -234,6 +234,10 @@ class ChatController extends StateNotifier<ChatState> {
 
       final memoryStrings = _localMemories.take(10).map((m) => m.content).toList();
 
+      final prefs = await SharedPreferences.getInstance();
+      final heroName = prefs.getString('hero_display_name') ?? 'Partner';
+      final heroPersona = prefs.getString('hero_persona') ?? 'Best Buddy 🤝';
+
       final stopwatch = Stopwatch()..start();
 
       // Request structured response from Groq AI (or Gemini AI)
@@ -241,12 +245,16 @@ class ChatController extends StateNotifier<ChatState> {
       if (_groqService.isConfigured) {
         aiResponse = await _groqService.generateCompanionResponse(
           userMessage: text,
+          userName: heroName,
+          heroPersona: heroPersona,
           conversationHistory: conversationHistory,
           memories: memoryStrings,
         );
       } else {
         aiResponse = await _geminiService.generateCompanionResponse(
           userMessage: text,
+          userName: heroName,
+          heroPersona: heroPersona,
           recentHistory: recentHistory,
           memories: memoryStrings,
         );

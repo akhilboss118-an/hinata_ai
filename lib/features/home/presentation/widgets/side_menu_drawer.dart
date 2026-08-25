@@ -12,6 +12,7 @@ import 'package:hinata_ai/features/memory/presentation/memory_screen.dart';
 import 'package:hinata_ai/features/diary/presentation/diary_screen.dart';
 import 'package:hinata_ai/features/settings/presentation/settings_screen.dart';
 import 'package:hinata_ai/features/character/presentation/wardrobe_sheet.dart';
+import 'package:hinata_ai/features/auth/presentation/edit_profile_sheet.dart';
 
 /// Clean glassmorphic side menu drawer ("Three lines" system)
 class SideMenuDrawer extends ConsumerWidget {
@@ -36,67 +37,81 @@ class SideMenuDrawer extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // User Profile Header
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.surfaceCard,
-                        border: Border.all(color: AppColors.primary, width: 2),
-                        boxShadow: const [AppShadows.neonViolet],
-                        image: user?.photoUrl != null
-                            ? DecorationImage(image: NetworkImage(user!.photoUrl!), fit: BoxFit.cover)
+              // User Profile Header (Clickable to Edit Profile)
+              InkWell(
+                onTap: () {
+                  Navigator.of(context).pop();
+                  EditProfileSheet.show(context);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.surfaceCard,
+                          border: Border.all(color: const Color(0xFF64D5F4), width: 2),
+                          boxShadow: const [AppShadows.neonViolet],
+                          image: user?.photoUrl != null
+                              ? DecorationImage(image: NetworkImage(user!.photoUrl!), fit: BoxFit.cover)
+                              : null,
+                        ),
+                        alignment: Alignment.center,
+                        child: user?.photoUrl == null
+                            ? const Text('👤', style: TextStyle(fontSize: 26))
                             : null,
                       ),
-                      alignment: Alignment.center,
-                      child: user?.photoUrl == null
-                          ? const Text('👤', style: TextStyle(fontSize: 26))
-                          : null,
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user?.displayName ?? 'Alex',
-                            style: AppTypography.titleMedium.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    user?.displayName ?? 'Alex',
+                                    style: AppTypography.titleMedium.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Icon(Icons.edit_rounded, color: Color(0xFF64D5F4), size: 15),
+                              ],
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.success,
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColors.success,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Cloud Synced',
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: AppColors.primaryLight,
-                                  fontSize: 11,
+                                const SizedBox(width: 6),
+                                Text(
+                                  user?.heroPersona ?? 'Spidey Partner',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: const Color(0xFF85BAE3),
+                                    fontSize: 11,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
@@ -109,6 +124,16 @@ class SideMenuDrawer extends ConsumerWidget {
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
+                    _drawerTile(
+                      icon: Icons.person_pin_rounded,
+                      title: 'Edit Hero Profile',
+                      subtitle: 'Change name, age & partnership dynamic',
+                      color: const Color(0xFF64D5F4),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        EditProfileSheet.show(context);
+                      },
+                    ),
                     _drawerTile(
                       icon: Icons.checkroom_rounded,
                       title: 'Hero Wardrobe & Stage',

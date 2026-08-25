@@ -292,6 +292,21 @@ class AuthService {
     );
   }
 
+  /// Updates user profile in Firestore
+  Future<void> updateUserProfile(UserProfile profile) async {
+    final firestore = _firestore;
+    if (firestore != null) {
+      try {
+        await firestore
+            .collection('users')
+            .doc(profile.uid)
+            .set(profile.toMap(), SetOptions(merge: true));
+      } catch (e) {
+        debugPrint('Firestore update profile notice: $e');
+      }
+    }
+  }
+
   /// Signs out from Firebase and Google Sign-In
   Future<void> signOut() async {
     try {

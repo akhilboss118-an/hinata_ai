@@ -106,13 +106,47 @@ class AuthController extends StateNotifier<AuthState> {
     state = Authenticated(
       user: UserProfile(
         uid: 'hinata_guest_user',
-        displayName: 'Peter',
-        email: 'peter@hinata.ai',
+        displayName: 'Partner',
+        email: 'hero@spidey.ai',
         createdAt: now,
         lastSeenAt: now,
         timezone: now.timeZoneName,
       ),
     );
+  }
+
+  /// Updates the user's customized hero name, age, and dynamic with Spidey
+  Future<void> updateHeroIdentity({
+    required String name,
+    int? age,
+    String? heroPersona,
+  }) async {
+    final current = state;
+    if (current is Authenticated) {
+      final updated = current.user.copyWith(
+        displayName: name.trim().isEmpty ? 'Partner' : name.trim(),
+        age: age,
+        heroPersona: heroPersona,
+      );
+      state = Authenticated(user: updated);
+      try {
+        await _authService.updateUserProfile(updated);
+      } catch (_) {}
+    } else {
+      final now = DateTime.now();
+      state = Authenticated(
+        user: UserProfile(
+          uid: 'hinata_user',
+          displayName: name.trim().isEmpty ? 'Partner' : name.trim(),
+          email: 'hero@spidey.ai',
+          age: age,
+          heroPersona: heroPersona,
+          createdAt: now,
+          lastSeenAt: now,
+          timezone: now.timeZoneName,
+        ),
+      );
+    }
   }
 }
 

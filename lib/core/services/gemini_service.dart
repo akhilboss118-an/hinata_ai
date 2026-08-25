@@ -65,17 +65,20 @@ You MUST respond ALWAYS in valid JSON matching this exact schema:
   /// Generates a structured response from Hinata with emotional and animation triggers
   Future<GeminiCompanionResponse> generateCompanionResponse({
     required String userMessage,
+    String userName = 'Partner',
+    String? heroPersona,
     List<String> recentHistory = const [],
     List<String> memories = const [],
   }) async {
     if (_model == null) {
-      return _getSmartResponse(userMessage);
+      return _getSmartResponse(userMessage, userName: userName);
     }
 
     try {
       final promptBuffer = StringBuffer();
+      promptBuffer.writeln('Partner Profile: Name: $userName, Persona: ${heroPersona ?? "Best Buddy"}. Call the user by their name "$userName" naturally in your conversation!');
       if (memories.isNotEmpty) {
-        promptBuffer.writeln('Memories about the user:');
+        promptBuffer.writeln('Memories about $userName:');
         for (final m in memories) {
           promptBuffer.writeln('- $m');
         }
@@ -104,64 +107,50 @@ You MUST respond ALWAYS in valid JSON matching this exact schema:
       return _parseJsonOutput(rawText);
     } catch (e) {
       debugPrint('GeminiService error: $e');
-      return _getSmartResponse(userMessage);
+      return _getSmartResponse(userMessage, userName: userName);
     }
   }
 
-  GeminiCompanionResponse _getSmartResponse(String userMessage) {
-    final lower = userMessage.trim().toLowerCase();
-    final now = DateTime.now();
-    final hour = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
-    final period = now.hour >= 12 ? 'PM' : 'AM';
-    final minuteStr = now.minute.toString().padLeft(2, '0');
-    final timeStr = "$hour:$minuteStr $period";
+  GeminiCompanionResponse _getSmartResponse(String userMessage, {String userName = 'Partner'}) {
+    final lower = userMessage.toLowerCase();
+    String replyText;
+    CharacterEmotion emotion;
+    String animation;
 
-    String replyText = "I'm always swinging around! Tell me what's on your mind 🕷️✨";
-    CharacterEmotion emotion = CharacterEmotion.happy;
-    String animation = 'talking';
-
-    if (lower.contains('time') || lower.contains('clock') || lower.contains('hour')) {
-      replyText = "It's currently $timeStr right now! ⏰";
-      emotion = CharacterEmotion.neutral;
-      animation = 'talking';
-    } else if (lower.contains('hows your day') || lower.contains('how is your day') || lower.contains('how are you') || lower.contains('how r u') || lower.contains('how u doing')) {
-      replyText = "My day has been awesome! Just saved the neighborhood and now hanging out with you. How about yours? 😊";
-      emotion = CharacterEmotion.happy;
-      animation = 'talking';
-    } else if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey')) {
-      replyText = "Hii! 👋 Great to see you! How are you doing today?";
+    if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey')) {
+      replyText = "Hey $userName! 👋 Great to see you! How are you doing today?";
       emotion = CharacterEmotion.happy;
       animation = 'wave';
     } else if (lower.contains('game') || lower.contains('play') || lower.contains('flip') || lower.contains('jump')) {
-      replyText = "Oh, you are on! Let's get this party started! 🕷️⚡";
+      replyText = "Oh $userName, you are on! Let's get this party started! 🕷️⚡";
       emotion = CharacterEmotion.excited;
       animation = 'front_flip';
     } else if (lower.contains('awesome') || lower.contains('love') || lower.contains('best') || lower.contains('great')) {
-      replyText = "Thank you so much! You are truly amazing to hang out with! ❤️";
+      replyText = "Thank you so much, $userName! You are truly amazing to hang out with! ❤️";
       emotion = CharacterEmotion.affectionate;
       animation = 'clap';
     } else if (lower.contains('bad news') || lower.contains('sad') || lower.contains('cry') || lower.contains('depressed') || lower.contains('down')) {
-      replyText = "I'm right here with you... Take a deep breath. Everything is going to be okay. ❤️";
+      replyText = "I'm right here with you, $userName... Take a deep breath. Everything is going to be okay. ❤️";
       emotion = CharacterEmotion.sad;
       animation = 'sad';
     } else if (lower.contains('what happened') || lower.contains('wait') || lower.contains('whoa') || lower.contains('omg')) {
-      replyText = "Whoa! Spider-sense is tingling! What just went down?! 😲";
+      replyText = "Whoa $userName! Spider-sense is tingling! What just went down?! 😲";
       emotion = CharacterEmotion.surprised;
       animation = 'swing_landing';
     } else if (lower.contains("don't understand") || lower.contains('dont understand') || lower.contains('confus') || lower.contains('what do you mean')) {
-      replyText = "Hmm, let me break that down. What part is feeling tricky? 🤔";
+      replyText = "Hmm $userName, let me break that down for you. What part is feeling tricky? 🤔";
       emotion = CharacterEmotion.confused;
       animation = 'thinking';
     } else if (lower.contains('disappointed') || lower.contains('annoy') || lower.contains('angry') || lower.contains('mad')) {
-      replyText = "Aw man, don't let it get you down. Tomorrow is a brand new day! 🕸️";
+      replyText = "Aw man $userName, don't let it get you down. Tomorrow is a brand new day! 🕸️";
       emotion = CharacterEmotion.annoyed;
       animation = 'disappointed';
     } else if (lower.contains('who are you') || lower.contains('your name')) {
-      replyText = "I'm your friendly neighborhood Spider-Man AI companion! 🕷️";
+      replyText = "I'm your friendly neighborhood Spider-Man AI companion, $userName! 🕷️";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     } else {
-      replyText = "That's awesome! Tell me more, I'm all ears! 🕷️✨";
+      replyText = "That's awesome, $userName! Tell me more, I'm all ears! 🕷️✨";
       emotion = CharacterEmotion.happy;
       animation = 'talking';
     }

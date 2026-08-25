@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/auth_state.dart';
 import 'login_screen.dart';
+import 'hero_onboarding_screen.dart';
 import '../../home/presentation/home_screen.dart';
 
 /// App Startup Loading & Session Verification Screen with Stitch Aesthetics
@@ -38,7 +40,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     if (!mounted) return;
     final authState = ref.read(authControllerProvider);
-    final targetWidget = authState is Authenticated ? const HomeScreen() : const LoginScreen();
+    Widget targetWidget = const LoginScreen();
+
+    if (authState is Authenticated) {
+      final prefs = await SharedPreferences.getInstance();
+      final hasCompleted = prefs.getBool('has_completed_onboarding') ?? false;
+      targetWidget = hasCompleted ? const HomeScreen() : const HeroOnboardingScreen();
+    }
+
+    if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(

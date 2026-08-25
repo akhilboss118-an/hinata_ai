@@ -4,6 +4,8 @@ class UserProfile {
   final String displayName;
   final String email;
   final String? photoUrl;
+  final int? age;
+  final String? heroPersona;
   final DateTime createdAt;
   final DateTime lastSeenAt;
   final String timezone;
@@ -13,6 +15,8 @@ class UserProfile {
     required this.displayName,
     required this.email,
     this.photoUrl,
+    this.age,
+    this.heroPersona,
     required this.createdAt,
     required this.lastSeenAt,
     required this.timezone,
@@ -23,6 +27,8 @@ class UserProfile {
     String? displayName,
     String? email,
     String? photoUrl,
+    int? age,
+    String? heroPersona,
     DateTime? createdAt,
     DateTime? lastSeenAt,
     String? timezone,
@@ -32,6 +38,8 @@ class UserProfile {
       displayName: displayName ?? this.displayName,
       email: email ?? this.email,
       photoUrl: photoUrl ?? this.photoUrl,
+      age: age ?? this.age,
+      heroPersona: heroPersona ?? this.heroPersona,
       createdAt: createdAt ?? this.createdAt,
       lastSeenAt: lastSeenAt ?? this.lastSeenAt,
       timezone: timezone ?? this.timezone,
@@ -44,6 +52,8 @@ class UserProfile {
       'displayName': displayName,
       'email': email,
       'photoUrl': photoUrl,
+      'age': age,
+      'heroPersona': heroPersona,
       'createdAt': createdAt.toIso8601String(),
       'lastSeenAt': lastSeenAt.toIso8601String(),
       'timezone': timezone,
@@ -67,6 +77,8 @@ class UserProfile {
       displayName: map['displayName'] as String? ?? 'Friend',
       email: map['email'] as String? ?? '',
       photoUrl: map['photoUrl'] as String? ?? map['photoURL'] as String?,
+      age: (map['age'] as num?)?.toInt(),
+      heroPersona: map['heroPersona'] as String?,
       createdAt: parseDate(map['createdAt']),
       lastSeenAt: parseDate(map['lastSeenAt'] ?? map['lastLoginAt']),
       timezone: map['timezone'] as String? ?? DateTime.now().timeZoneName,

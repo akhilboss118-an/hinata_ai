@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../app/theme/app_radius.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/auth_state.dart';
-import '../../home/presentation/home_screen.dart';
+import 'hero_onboarding_screen.dart';
 
 /// Pixel-perfect Stitch UI Login Screen for Hinata AI / Spider-Man Companion
 class LoginScreen extends ConsumerStatefulWidget {
@@ -62,7 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (next is Authenticated) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const HomeScreen(),
+            pageBuilder: (_, __, ___) => const HeroOnboardingScreen(),
             transitionsBuilder: (_, animation, __, child) =>
                 FadeTransition(opacity: animation, child: child),
             transitionDuration: const Duration(milliseconds: 500),

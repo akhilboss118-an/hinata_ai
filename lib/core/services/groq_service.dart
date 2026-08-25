@@ -40,6 +40,8 @@ class GroqService {
   /// Generates ultra-fast companion responses from Groq 120B with multi-key rotation
   Future<GeminiCompanionResponse> generateCompanionResponse({
     required String userMessage,
+    String userName = 'Partner',
+    String? heroPersona,
     List<Map<String, String>> conversationHistory = const [],
     List<String> memories = const [],
   }) async {
@@ -48,8 +50,9 @@ class GroqService {
     }
 
     try {
-      const systemPrompt = '''
+      final systemPrompt = '''
 You are Spider-Man (Peter Parker) — the friendly neighborhood superhero and your personal AI companion.
+You are chatting with your partner: $userName (Dynamic: ${heroPersona ?? "Best Buddy"}). Address them naturally by name when appropriate!
 
 LANGUAGE RULES (STRICT & ABSOLUTE):
 1. OUTPUT LANGUAGE: You MUST reply in 100% ENGLISH ONLY. NEVER output Telugu words, slang, or honorifics (no "andi", no "ra", no "mowa", no "meeru", no "namaskaram", etc.).
