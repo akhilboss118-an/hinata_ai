@@ -39,7 +39,8 @@ class ChatRepository {
         final query = await convsRef
             .where('dateKey', isEqualTo: dateKey)
             .limit(1)
-            .get();
+            .get()
+            .timeout(const Duration(milliseconds: 350));
 
         if (query.docs.isNotEmpty) {
           final doc = query.docs.first;
@@ -60,7 +61,7 @@ class ChatRepository {
     );
 
     try {
-      await convsRef?.doc(conversationId).set(newConv.toMap());
+      await convsRef?.doc(conversationId).set(newConv.toMap()).timeout(const Duration(milliseconds: 500));
     } catch (_) {}
 
     return newConv;
@@ -74,12 +75,12 @@ class ChatRepository {
   }) async {
     try {
       final messageRef = _conversationMessages(uid, conversationId)?.doc(message.messageId);
-      await messageRef?.set(message.toMap());
+      await messageRef?.set(message.toMap()).timeout(const Duration(milliseconds: 600));
 
       await _userConversations(uid)?.doc(conversationId).update({
         'lastMessagePreview': message.text,
         'updatedAt': message.timestamp.toIso8601String(),
-      });
+      }).timeout(const Duration(milliseconds: 600));
     } catch (_) {}
   }
 
@@ -105,7 +106,10 @@ class ChatRepository {
     if (convsRef == null) return [];
 
     try {
-      final snapshot = await convsRef.orderBy('updatedAt', descending: true).get();
+      final snapshot = await convsRef
+          .orderBy('updatedAt', descending: true)
+          .get()
+          .timeout(const Duration(milliseconds: 600));
       return snapshot.docs
           .map((doc) => Conversation.fromMap(doc.data(), doc.id))
           .toList();

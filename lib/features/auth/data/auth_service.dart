@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_profile.dart';
 
 /// Production-grade Service managing Google Sign-In and Firebase Authentication with Firestore synchronization
@@ -264,26 +265,57 @@ class AuthService {
     );
   }
 
-  /// Retrieves user profile from Firestore for the current active session
+  /// Retrieves user profile with local-first instant retrieval and adblocker-safe timeout
   Future<UserProfile?> getCurrentUserProfile() async {
     final user = currentUser;
     if (user == null) return null;
 
+    // Fast path: Instant retrieval from SharedPreferences (< 5ms)
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localName = prefs.getString('spidey_hero_name');
+      final localAgeStr = prefs.getString('spidey_hero_age');
+      final localAgeInt = prefs.getInt('spidey_hero_age_int') ?? int.tryParse(localAgeStr ?? '');
+      final localDynamic = prefs.getString('spidey_hero_persona');
+      final localAvatar = prefs.getString('spidey_hero_avatar');
+
+      if (localName != null && localName.isNotEmpty) {
+        return UserProfile(
+          uid: user.uid,
+          displayName: localName,
+          email: user.email ?? '',
+          photoUrl: localAvatar ?? user.photoURL,
+          age: localAgeInt,
+          heroPersona: localDynamic,
+          createdAt: DateTime.now(),
+          lastSeenAt: DateTime.now(),
+          timezone: DateTime.now().timeZoneName,
+        );
+      }
+    } catch (_) {}
+
     final firestore = _firestore;
     if (firestore != null) {
       try {
-        final docSnap = await firestore.collection('users').doc(user.uid).get();
+        // Fast timeout (300ms) so ad-blocker blocking never freezes the UI
+        final docSnap = await firestore
+            .collection('users')
+            .doc(user.uid)
+            .get(const GetOptions(source: Source.cache))
+            .catchError((_) => firestore.collection('users').doc(user.uid).get())
+            .timeout(const Duration(milliseconds: 300));
+
         if (docSnap.exists && docSnap.data() != null) {
           return UserProfile.fromMap(docSnap.data()!, user.uid);
         }
       } catch (e) {
-        debugPrint('Firestore fetch notice: $e');
+        debugPrint('Firestore fast-fetch notice: $e');
       }
     }
 
     return UserProfile(
       uid: user.uid,
-      displayName: user.displayName ?? 'Friend',
+      displayName: user.displayName ?? 'Partner',
       email: user.email ?? '',
       photoUrl: user.photoURL,
       createdAt: DateTime.now(),
@@ -292,15 +324,27 @@ class AuthService {
     );
   }
 
-  /// Updates user profile in Firestore
+  /// Updates user profile in Firestore and local SharedPreferences
   Future<void> updateUserProfile(UserProfile profile) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('spidey_hero_name', profile.displayName);
+      if (profile.age != null) {
+        await prefs.setInt('spidey_hero_age_int', profile.age!);
+        await prefs.setString('spidey_hero_age', profile.age.toString());
+      }
+      if (profile.heroPersona != null) await prefs.setString('spidey_hero_persona', profile.heroPersona!);
+      if (profile.photoUrl != null) await prefs.setString('spidey_hero_avatar', profile.photoUrl!);
+    } catch (_) {}
+
     final firestore = _firestore;
     if (firestore != null) {
       try {
         await firestore
             .collection('users')
             .doc(profile.uid)
-            .set(profile.toMap(), SetOptions(merge: true));
+            .set(profile.toMap(), SetOptions(merge: true))
+            .timeout(const Duration(milliseconds: 600));
       } catch (e) {
         debugPrint('Firestore update profile notice: $e');
       }

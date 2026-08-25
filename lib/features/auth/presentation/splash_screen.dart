@@ -27,15 +27,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _checkSession() async {
-    // Smooth initial loading duration
-    await Future.delayed(const Duration(milliseconds: 1400));
+    // Ultra-fast responsive startup duration (250ms)
+    await Future.delayed(const Duration(milliseconds: 250));
     if (!mounted) return;
 
     try {
       await ref
           .read(authControllerProvider.notifier)
           .checkAuthState()
-          .timeout(const Duration(seconds: 2));
+          .timeout(const Duration(milliseconds: 400));
     } catch (_) {}
 
     if (!mounted) return;
@@ -55,7 +55,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         pageBuilder: (_, __, ___) => targetWidget,
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
-        transitionDuration: const Duration(milliseconds: 600),
+        transitionDuration: const Duration(milliseconds: 300),
       ),
     );
   }
