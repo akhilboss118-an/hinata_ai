@@ -30,7 +30,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (!mounted) return;
 
     try {
-      await ref.read(authControllerProvider.notifier).checkAuthState();
+      await ref
+          .read(authControllerProvider.notifier)
+          .checkAuthState()
+          .timeout(const Duration(seconds: 2));
     } catch (_) {}
 
     if (!mounted) return;
