@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:js' as js;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'character_state.dart';
@@ -34,10 +36,17 @@ class CharacterController extends StateNotifier<CharacterState> {
       final envId = prefs.getString('spidey_selected_env');
 
       if (suitId != null || envId != null) {
+        final suit = SpiderSuit.fromId(suitId);
+        final env = StageEnvironment.fromId(envId);
         state = state.copyWith(
-          currentSuit: SpiderSuit.fromId(suitId),
-          currentEnvironment: StageEnvironment.fromId(envId),
+          currentSuit: suit,
+          currentEnvironment: env,
         );
+        if (kIsWeb) {
+          try {
+            js.context.callMethod('applySpiderSuit', [suit.id]);
+          } catch (_) {}
+        }
       }
     } catch (_) {}
   }
@@ -45,6 +54,11 @@ class CharacterController extends StateNotifier<CharacterState> {
   /// Sets the equipped Spider-Man suit and saves to device storage
   Future<void> setSuit(SpiderSuit suit) async {
     state = state.copyWith(currentSuit: suit);
+    if (kIsWeb) {
+      try {
+        js.context.callMethod('applySpiderSuit', [suit.id]);
+      } catch (_) {}
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('spidey_selected_suit', suit.id);

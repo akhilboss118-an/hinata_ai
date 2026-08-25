@@ -171,111 +171,118 @@ class _WardrobeBottomSheetState extends ConsumerState<WardrobeBottomSheet> with 
         final suit = SpiderSuit.values[index];
         final isEquipped = state.currentSuit == suit;
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: isEquipped
-                ? const Color(0xFF162338)
-                : const Color(0xFF131C28).withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
+        return InkWell(
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            controller.setSuit(suit);
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
               color: isEquipped
-                  ? suit.glowColor
-                  : const Color(0xFF26354A),
-              width: isEquipped ? 1.8 : 1,
+                  ? const Color(0xFF162338)
+                  : const Color(0xFF131C28).withValues(alpha: 0.8),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isEquipped
+                    ? suit.glowColor
+                    : const Color(0xFF26354A),
+                width: isEquipped ? 1.8 : 1,
+              ),
+              boxShadow: isEquipped
+                  ? [
+                      BoxShadow(
+                        color: suit.glowColor.withValues(alpha: 0.25),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : [],
             ),
-            boxShadow: isEquipped
-                ? [
-                    BoxShadow(
-                      color: suit.glowColor.withValues(alpha: 0.25),
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [suit.primaryColor, suit.accentColor],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                border: Border.all(color: suit.glowColor, width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: suit.glowColor.withValues(alpha: 0.4),
-                    blurRadius: 8,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              leading: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [suit.primaryColor, suit.accentColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  border: Border.all(color: suit.glowColor, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: suit.glowColor.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: Text(suit.iconEmoji, style: const TextStyle(fontSize: 22)),
+              ),
+              title: Row(
+                children: [
+                  Text(
+                    suit.name,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (isEquipped)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: suit.glowColor.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(color: suit.glowColor, width: 0.8),
+                      ),
+                      child: Text(
+                        'EQUIPPED',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: suit.glowColor,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
                 ],
               ),
-              alignment: Alignment.center,
-              child: Text(suit.iconEmoji, style: const TextStyle(fontSize: 22)),
-            ),
-            title: Row(
-              children: [
-                Text(
-                  suit.name,
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  suit.tagline,
                   style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    fontSize: 12,
+                    color: Colors.white70,
                   ),
-                ),
-                const SizedBox(width: 8),
-                if (isEquipped)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: suit.glowColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(color: suit.glowColor, width: 0.8),
-                    ),
-                    child: Text(
-                      'EQUIPPED',
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: suit.glowColor,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                suit.tagline,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: Colors.white70,
                 ),
               ),
-            ),
-            trailing: isEquipped
-                ? Icon(Icons.check_circle_rounded, color: suit.glowColor, size: 24)
-                : ElevatedButton(
-                    onPressed: () {
-                      HapticFeedback.mediumImpact();
-                      controller.setSuit(suit);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF004B6E),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
+              trailing: isEquipped
+                  ? Icon(Icons.check_circle_rounded, color: suit.glowColor, size: 24)
+                  : ElevatedButton(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        controller.setSuit(suit);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF004B6E),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        textStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
                       ),
-                      textStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                      child: const Text('Equip'),
                     ),
-                    child: const Text('Equip'),
-                  ),
+            ),
           ),
         );
       },
@@ -290,111 +297,118 @@ class _WardrobeBottomSheetState extends ConsumerState<WardrobeBottomSheet> with 
         final env = StageEnvironment.values[index];
         final isActive = state.currentEnvironment == env;
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: isActive
-                ? const Color(0xFF162338)
-                : const Color(0xFF131C28).withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
+        return InkWell(
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            controller.setEnvironment(env);
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
               color: isActive
-                  ? env.ringColor
-                  : const Color(0xFF26354A),
-              width: isActive ? 1.8 : 1,
+                  ? const Color(0xFF162338)
+                  : const Color(0xFF131C28).withValues(alpha: 0.8),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isActive
+                    ? env.ringColor
+                    : const Color(0xFF26354A),
+                width: isActive ? 1.8 : 1,
+              ),
+              boxShadow: isActive
+                  ? [
+                      BoxShadow(
+                        color: env.ringColor.withValues(alpha: 0.25),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : [],
             ),
-            boxShadow: isActive
-                ? [
-                    BoxShadow(
-                      color: env.ringColor.withValues(alpha: 0.25),
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: env.gradientColors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                border: Border.all(color: env.ringColor, width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: env.ringColor.withValues(alpha: 0.4),
-                    blurRadius: 8,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              leading: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: env.gradientColors,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  border: Border.all(color: env.ringColor, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: env.ringColor.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: Text(env.iconEmoji, style: const TextStyle(fontSize: 22)),
+              ),
+              title: Row(
+                children: [
+                  Text(
+                    env.name,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (isActive)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: env.ringColor.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(color: env.ringColor, width: 0.8),
+                      ),
+                      child: Text(
+                        'ACTIVE',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: env.ringColor,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
                 ],
               ),
-              alignment: Alignment.center,
-              child: Text(env.iconEmoji, style: const TextStyle(fontSize: 22)),
-            ),
-            title: Row(
-              children: [
-                Text(
-                  env.name,
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  env.tagline,
                   style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    fontSize: 12,
+                    color: Colors.white70,
                   ),
-                ),
-                const SizedBox(width: 8),
-                if (isActive)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: env.ringColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(color: env.ringColor, width: 0.8),
-                    ),
-                    child: Text(
-                      'ACTIVE',
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: env.ringColor,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                env.tagline,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: Colors.white70,
                 ),
               ),
-            ),
-            trailing: isActive
-                ? Icon(Icons.check_circle_rounded, color: env.ringColor, size: 24)
-                : ElevatedButton(
-                    onPressed: () {
-                      HapticFeedback.mediumImpact();
-                      controller.setEnvironment(env);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF004B6E),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
+              trailing: isActive
+                  ? Icon(Icons.check_circle_rounded, color: env.ringColor, size: 24)
+                  : ElevatedButton(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        controller.setEnvironment(env);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF004B6E),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        textStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
                       ),
-                      textStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                      child: const Text('Apply'),
                     ),
-                    child: const Text('Apply'),
-                  ),
+            ),
           ),
         );
       },

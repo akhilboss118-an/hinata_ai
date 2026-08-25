@@ -49,6 +49,50 @@
       }
     })();
   </script>
+  <!-- Real-time 3D Spider-Man Suit Shader Engine -->
+  <script>
+    window.currentSpiderSuit = 'stark_enhanced';
+    window.applySpiderSuit = function (suitId) {
+      window.currentSpiderSuit = suitId || 'stark_enhanced';
+      var filterMap = {
+        'stark_enhanced': 'none',
+        'classic_spidey': 'saturate(165%) contrast(118%) brightness(106%) drop-shadow(0 0 16px rgba(255,77,77,0.45))',
+        'symbiote_black': 'grayscale(100%) contrast(165%) brightness(68%) drop-shadow(0 0 20px rgba(255,255,255,0.5))',
+        'iron_spider': 'sepia(55%) saturate(190%) contrast(120%) drop-shadow(0 0 20px rgba(255,215,0,0.6))',
+        'cyber_2099': 'hue-rotate(160deg) saturate(200%) contrast(130%) drop-shadow(0 0 22px rgba(0,245,212,0.65))'
+      };
+      var filterVal = filterMap[window.currentSpiderSuit] || 'none';
+
+      // Apply to all model-viewer elements in DOM
+      var models = document.querySelectorAll('model-viewer');
+      models.forEach(function (m) {
+        m.style.filter = filterVal;
+        m.style.transition = 'filter 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+      });
+
+      // Apply inside iframes if embedded
+      var iframes = document.querySelectorAll('iframe');
+      iframes.forEach(function (iframe) {
+        try {
+          if (iframe.contentDocument) {
+            var innerModels = iframe.contentDocument.querySelectorAll('model-viewer');
+            innerModels.forEach(function (im) {
+              im.style.filter = filterVal;
+              im.style.transition = 'filter 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            });
+          }
+        } catch (e) {}
+      });
+    };
+
+    // Auto-apply current suit when new model-viewer elements are added to the DOM
+    var observer = new MutationObserver(function (mutations) {
+      if (window.currentSpiderSuit && window.currentSpiderSuit !== 'stark_enhanced') {
+        window.applySpiderSuit(window.currentSpiderSuit);
+      }
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  </script>
   <!-- Web Speech API Helpers for STT & TTS -->
   <script>
     // Ensure voices are loaded asynchronously in Chrome/Safari

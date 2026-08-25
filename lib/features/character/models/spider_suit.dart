@@ -66,6 +66,66 @@ enum SpiderSuit {
     required this.iconEmoji,
   });
 
+  List<double> get colorMatrix {
+    switch (this) {
+      case SpiderSuit.symbioteBlack:
+        // Grayscale + High Contrast + Deep Shadow (Pure Symbiote Black & White look)
+        return const [
+          0.33 * 1.4, 0.33 * 1.4, 0.33 * 1.4, 0, -45,
+          0.33 * 1.4, 0.33 * 1.4, 0.33 * 1.4, 0, -45,
+          0.33 * 1.4, 0.33 * 1.4, 0.33 * 1.4, 0, -45,
+          0,          0,          0,          1, 0,
+        ];
+      case SpiderSuit.ironSpider:
+        // Warm Gold & Armor Crimson tint (Iron Spider nanotech look)
+        return const [
+          1.25, 0.20, 0.00, 0, 20,
+          0.20, 1.15, 0.00, 0, 15,
+          0.00, 0.10, 0.45, 0, -25,
+          0,    0,    0,    1, 0,
+        ];
+      case SpiderSuit.cyber2099:
+        // Cyan / Neon Teal and Magenta shift (Cyber 2099 futuristic look)
+        return const [
+          0.10, 0.85, 0.50, 0, 5,
+          0.20, 0.65, 0.95, 0, 15,
+          0.80, 0.20, 1.35, 0, 25,
+          0,    0,    0,    1, 0,
+        ];
+      case SpiderSuit.classicSpidey:
+        // High saturation and contrast (Comic Book vintage)
+        return const [
+          1.35, -0.10, -0.10, 0, 8,
+          -0.10, 1.25, -0.10, 0, 8,
+          -0.10, -0.10, 1.45, 0, 8,
+          0,     0,     0,    1, 0,
+        ];
+      case SpiderSuit.starkEnhanced:
+        // Identity matrix
+        return const [
+          1, 0, 0, 0, 0,
+          0, 1, 0, 0, 0,
+          0, 0, 1, 0, 0,
+          0, 0, 0, 1, 0,
+        ];
+    }
+  }
+
+  String get cssFilter {
+    switch (this) {
+      case SpiderSuit.symbioteBlack:
+        return 'grayscale(100%) contrast(160%) brightness(70%) drop-shadow(0 0 18px rgba(255,255,255,0.45))';
+      case SpiderSuit.ironSpider:
+        return 'sepia(55%) saturate(190%) contrast(120%) drop-shadow(0 0 18px rgba(255,215,0,0.55))';
+      case SpiderSuit.cyber2099:
+        return 'hue-rotate(160deg) saturate(200%) contrast(130%) drop-shadow(0 0 20px rgba(0,245,212,0.6))';
+      case SpiderSuit.classicSpidey:
+        return 'saturate(160%) contrast(115%) brightness(105%) drop-shadow(0 0 14px rgba(255,77,77,0.4))';
+      case SpiderSuit.starkEnhanced:
+        return 'none';
+    }
+  }
+
   static SpiderSuit fromId(String? id) {
     if (id == null) return SpiderSuit.starkEnhanced;
     for (final suit in SpiderSuit.values) {
