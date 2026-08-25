@@ -54,13 +54,15 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
     }
 
     final auraColor = characterState.currentAuraColor;
+    final env = characterState.currentEnvironment;
+    final suit = characterState.currentSuit;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Subtle Dynamic Radial Gradient Background reacting to Emotion State
+            // Subtle Dynamic Radial Gradient Background reacting to Environment, Suit & Emotion
             Positioned.fill(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 600),
@@ -68,11 +70,11 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     center: const Alignment(0, -0.1),
-                    radius: 1.15,
+                    radius: 1.25,
                     colors: [
-                      auraColor.withValues(alpha: 0.12),
-                      AppColors.surfaceCardHover.withValues(alpha: 0.25),
-                      AppColors.background.withValues(alpha: 0.95),
+                      Color.lerp(env.gradientColors[0], auraColor, 0.25)!.withValues(alpha: 0.55),
+                      Color.lerp(env.gradientColors[1], suit.glowColor, 0.15)!.withValues(alpha: 0.70),
+                      env.gradientColors[2].withValues(alpha: 0.95),
                       AppColors.backgroundDeep,
                     ],
                   ),
@@ -80,16 +82,16 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
               ),
             ),
 
-            // Decorative Dynamic Ethereal Rings reacting to Emotion
+            // Decorative Dynamic Ethereal Rings reacting to Environment, Suit & Emotion
             _EtherealRing(
               diameter: _clampWidth(constraints.maxWidth, 0.95, 450),
               liftFactor: 0.10,
-              borderColor: auraColor.withValues(alpha: 0.12),
+              borderColor: Color.lerp(env.ringColor, auraColor, 0.35)!.withValues(alpha: 0.16),
             ),
             _EtherealRing(
               diameter: _clampWidth(constraints.maxWidth, 0.85, 400),
               liftFactor: 0.10,
-              borderColor: auraColor.withValues(alpha: 0.22),
+              borderColor: Color.lerp(suit.glowColor, auraColor, 0.35)!.withValues(alpha: 0.28),
             ),
 
             // Dynamic 3D Character Stage wrapped in AnimatedAlign based on animation state

@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'character_state.dart';
 import '../models/character_emotion.dart';
 import '../models/character_gesture.dart';
+import '../models/spider_suit.dart';
+import '../models/stage_environment.dart';
 
 final characterControllerProvider =
     StateNotifierProvider<CharacterController, CharacterState>((ref) {
@@ -21,6 +24,40 @@ class CharacterController extends StateNotifier<CharacterState> {
 
   CharacterController() : super(const CharacterState()) {
     _startNaturalIdleLoop();
+    _loadPersistedPreferences();
+  }
+
+  Future<void> _loadPersistedPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final suitId = prefs.getString('spidey_selected_suit');
+      final envId = prefs.getString('spidey_selected_env');
+
+      if (suitId != null || envId != null) {
+        state = state.copyWith(
+          currentSuit: SpiderSuit.fromId(suitId),
+          currentEnvironment: StageEnvironment.fromId(envId),
+        );
+      }
+    } catch (_) {}
+  }
+
+  /// Sets the equipped Spider-Man suit and saves to device storage
+  Future<void> setSuit(SpiderSuit suit) async {
+    state = state.copyWith(currentSuit: suit);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('spidey_selected_suit', suit.id);
+    } catch (_) {}
+  }
+
+  /// Sets the 3D stage environment / backdrop and saves to device storage
+  Future<void> setEnvironment(StageEnvironment environment) async {
+    state = state.copyWith(currentEnvironment: environment);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('spidey_selected_env', environment.id);
+    } catch (_) {}
   }
 
   /// Updates the thinking state when AI is generating responses

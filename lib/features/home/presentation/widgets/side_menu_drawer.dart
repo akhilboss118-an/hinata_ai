@@ -11,6 +11,7 @@ import 'package:hinata_ai/features/chat/presentation/chat_history_screen.dart';
 import 'package:hinata_ai/features/memory/presentation/memory_screen.dart';
 import 'package:hinata_ai/features/diary/presentation/diary_screen.dart';
 import 'package:hinata_ai/features/settings/presentation/settings_screen.dart';
+import 'package:hinata_ai/features/character/presentation/wardrobe_sheet.dart';
 
 /// Clean glassmorphic side menu drawer ("Three lines" system)
 class SideMenuDrawer extends ConsumerWidget {
@@ -108,6 +109,16 @@ class SideMenuDrawer extends ConsumerWidget {
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
+                    _drawerTile(
+                      icon: Icons.checkroom_rounded,
+                      title: 'Hero Wardrobe & Stage',
+                      subtitle: 'Suits, nanotech & stage backdrops',
+                      color: AppColors.primary,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        WardrobeBottomSheet.show(context);
+                      },
+                    ),
                     _drawerTile(
                       icon: Icons.chat_bubble_outline_rounded,
                       title: 'Chat History',

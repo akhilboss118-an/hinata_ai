@@ -12,6 +12,7 @@ import 'package:hinata_ai/core/services/voice_input_service.dart';
 import 'package:hinata_ai/features/character/models/character_emotion.dart';
 import 'package:hinata_ai/features/character/engine/character_controller.dart';
 import 'package:hinata_ai/features/character/engine/character_engine.dart';
+import 'package:hinata_ai/features/character/presentation/wardrobe_sheet.dart';
 import 'package:hinata_ai/features/chat/controllers/chat_controller.dart';
 import 'package:hinata_ai/features/auth/controllers/auth_controller.dart';
 import 'package:hinata_ai/features/auth/controllers/auth_state.dart';
@@ -199,6 +200,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             Row(
               children: [
+                // Hero Wardrobe Quick Action
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF101622).withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: const Color(0xFF004B6E).withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.checkroom_rounded,
+                      color: Color(0xFF85BAE3),
+                      size: 20,
+                    ),
+                    tooltip: 'Hero Wardrobe 🥋',
+                    onPressed: () => WardrobeBottomSheet.show(context),
+                  ),
+                ),
+
                 // Memory Vault Quick Action
                 Container(
                   margin: const EdgeInsets.only(right: 8),
