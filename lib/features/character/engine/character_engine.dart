@@ -2,12 +2,10 @@ import 'dart:js' as js;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:hinata_ai/app/theme/app_colors.dart';
 import '../models/character_emotion.dart';
 import '../models/character_gesture.dart';
-import '../presentation/wardrobe_sheet.dart';
 import 'character_controller.dart';
 import 'character_state.dart';
 
@@ -105,48 +103,6 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
                 curve: Curves.easeInOutCubic,
                 alignment: stageAlignment,
                 child: _buildModelStage(characterState),
-              ),
-            ),
-
-            // Floating Nanotech Suit HUD Pill on the Stage
-            Positioned(
-              top: 70,
-              left: 18,
-              child: GestureDetector(
-                onTap: () => WardrobeBottomSheet.show(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF101622).withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: suit.glowColor.withValues(alpha: 0.6),
-                      width: 1.2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: suit.glowColor.withValues(alpha: 0.25),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(suit.iconEmoji, style: const TextStyle(fontSize: 12)),
-                      const SizedBox(width: 5),
-                      Text(
-                        suit.name.toUpperCase(),
-                        style: GoogleFonts.jetBrainsMono(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: suit.glowColor,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ),
 

@@ -12,15 +12,10 @@ import 'package:hinata_ai/core/services/voice_input_service.dart';
 import 'package:hinata_ai/features/character/models/character_emotion.dart';
 import 'package:hinata_ai/features/character/engine/character_controller.dart';
 import 'package:hinata_ai/features/character/engine/character_engine.dart';
-import 'package:hinata_ai/features/character/presentation/wardrobe_sheet.dart';
 import 'package:hinata_ai/features/chat/controllers/chat_controller.dart';
 import 'package:hinata_ai/features/auth/controllers/auth_controller.dart';
 import 'package:hinata_ai/features/auth/controllers/auth_state.dart';
-import 'package:hinata_ai/features/chat/presentation/chat_history_screen.dart';
-import 'package:hinata_ai/features/memory/presentation/memory_screen.dart';
 import 'widgets/side_menu_drawer.dart';
-
-import 'dart:js' as js;
 
 /// Stitch Homepage: transparent top bar, full-screen character stage with
 /// ethereal rings, and the glass-panel chat bar with integrated voice input.
@@ -36,7 +31,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
-  bool _isVoiceMuted = false;
   bool _isListening = false;
 
   @override
@@ -153,7 +147,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             AnimatedContainer(
               duration: const Duration(milliseconds: 450),
               curve: Curves.easeInOut,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
                 color: const Color(0xFF101622).withValues(alpha: 0.88),
                 borderRadius: BorderRadius.circular(999),
@@ -181,7 +175,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Text(
                       characterState.currentEmotion.emoji,
-                      style: const TextStyle(fontSize: 13),
+                      style: const TextStyle(fontSize: 14),
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -196,113 +190,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ],
                 ),
               ),
-            ),
-
-            Row(
-              children: [
-                // Hero Wardrobe Quick Action
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF101622).withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: const Color(0xFF004B6E).withValues(alpha: 0.6),
-                    ),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.checkroom_rounded,
-                      color: Color(0xFF85BAE3),
-                      size: 20,
-                    ),
-                    tooltip: 'Hero Wardrobe 🥋',
-                    onPressed: () => WardrobeBottomSheet.show(context),
-                  ),
-                ),
-
-                // Memory Vault Quick Action
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF101622).withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: const Color(0xFF004B6E).withValues(alpha: 0.6),
-                    ),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.psychology_rounded,
-                      color: Color(0xFF85BAE3),
-                      size: 20,
-                    ),
-                    tooltip: 'Memory Vault 🧠',
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const MemoryScreen()),
-                      );
-                    },
-                  ),
-                ),
-
-                // Chat History Quick Action
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF101622).withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: const Color(0xFF004B6E).withValues(alpha: 0.6),
-                    ),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.chat_bubble_outline_rounded,
-                      color: Color(0xFF85BAE3),
-                      size: 19,
-                    ),
-                    tooltip: 'Chat History 💬',
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const ChatHistoryScreen()),
-                      );
-                    },
-                  ),
-                ),
-
-                // Voice Mute / Unmute
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF101622).withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: _isVoiceMuted
-                          ? Colors.white24
-                          : const Color(0xFF004B6E).withValues(alpha: 0.6),
-                    ),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      _isVoiceMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                      color: _isVoiceMuted ? Colors.white54 : const Color(0xFF85BAE3),
-                      size: 20,
-                    ),
-                    tooltip: _isVoiceMuted ? 'Unmute Spider-Man Voice' : 'Mute Voice',
-                    onPressed: () {
-                      setState(() {
-                        _isVoiceMuted = !_isVoiceMuted;
-                      });
-                      try {
-                        js.context['isVoiceMuted'] = _isVoiceMuted;
-                        if (_isVoiceMuted) {
-                          ElevenLabsService().stop();
-                        }
-                      } catch (_) {}
-                    },
-                  ),
-                ),
-              ],
             ),
           ],
         ),
