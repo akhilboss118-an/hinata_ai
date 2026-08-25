@@ -13,6 +13,7 @@ import 'package:hinata_ai/features/diary/presentation/diary_screen.dart';
 import 'package:hinata_ai/features/settings/presentation/settings_screen.dart';
 import 'package:hinata_ai/features/character/presentation/wardrobe_sheet.dart';
 import 'package:hinata_ai/features/auth/presentation/edit_profile_sheet.dart';
+import 'package:hinata_ai/core/services/sound_fx_service.dart';
 
 /// Clean glassmorphic side menu drawer ("Three lines" system)
 class SideMenuDrawer extends ConsumerWidget {
@@ -178,6 +179,21 @@ class SideMenuDrawer extends ConsumerWidget {
                         Navigator.of(context).push(
                           MaterialPageRoute(builder: (_) => const DiaryScreen()),
                         );
+                      },
+                    ),
+                    _drawerTile(
+                      icon: SoundFxService().isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                      title: 'Superhero Audio FX',
+                      subtitle: SoundFxService().isMuted
+                          ? 'Muted (Tap to enable THWIP! & SFX)'
+                          : 'Enabled (Web-shoot, Spider-Sense & SFX)',
+                      color: const Color(0xFF64D5F4),
+                      onTap: () async {
+                        await SoundFxService().toggleMute();
+                        SoundFxService().playTapChime();
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                        }
                       },
                     ),
                     _drawerTile(

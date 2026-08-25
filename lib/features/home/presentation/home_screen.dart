@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hinata_ai/app/theme/app_colors.dart';
 import 'package:hinata_ai/core/services/elevenlabs_service.dart';
 import 'package:hinata_ai/core/services/voice_input_service.dart';
+import 'package:hinata_ai/core/services/sound_fx_service.dart';
 import 'package:hinata_ai/features/character/models/character_emotion.dart';
 import 'package:hinata_ai/features/character/engine/character_controller.dart';
 import 'package:hinata_ai/features/character/engine/character_engine.dart';
@@ -69,6 +70,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _sendMessage() {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
+
+    SoundFxService().playThwip();
 
     final uid = _getUid();
 

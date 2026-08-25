@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/js_interop/js_interop.dart';
+import '../../../core/services/sound_fx_service.dart';
 import 'character_state.dart';
 import '../models/character_emotion.dart';
 import '../models/character_gesture.dart';
@@ -117,6 +118,12 @@ class CharacterController extends StateNotifier<CharacterState> {
 
     final prev = state.currentEmotion;
     final resolvedAnim = _resolveAnimationForEmotion(emotion, requestedAnimation: animation);
+
+    if (emotion == CharacterEmotion.surprised || emotion == CharacterEmotion.confused) {
+      SoundFxService().playSpiderSense();
+    } else if (emotion == CharacterEmotion.excited) {
+      SoundFxService().playTapChime();
+    }
 
     state = state.copyWith(
       currentEmotion: emotion,
@@ -262,36 +269,43 @@ class CharacterController extends StateNotifier<CharacterState> {
 
     switch (gesture) {
       case CharacterGesture.headPat:
+        SoundFxService().playTapChime();
         reactionEmotion = CharacterEmotion.happy;
         reactionText = 'Hey, thank you! Always great hanging out with you.';
         animation = 'wave';
         break;
       case CharacterGesture.cheekPoke:
+        SoundFxService().playTapChime();
         reactionEmotion = CharacterEmotion.excited;
         reactionText = 'Superhero landing! Spider-Man at your service.';
         animation = 'swing_landing';
         break;
       case CharacterGesture.noseTap:
+        SoundFxService().playSpiderSense();
         reactionEmotion = CharacterEmotion.thinking;
         reactionText = 'Whoa! Spider-sense is tingling. What is on your mind?';
         animation = 'thinking';
         break;
       case CharacterGesture.poke:
+        SoundFxService().playTapChime();
         reactionEmotion = CharacterEmotion.playful;
         reactionText = 'Hey there! What are you working on today?';
         animation = 'talking';
         break;
       case CharacterGesture.hold:
+        SoundFxService().playTapChime();
         reactionEmotion = CharacterEmotion.affectionate;
         reactionText = 'I have got your back! Let us get things done.';
         animation = 'clap';
         break;
       case CharacterGesture.swipe:
+        SoundFxService().playWhoosh();
         reactionEmotion = CharacterEmotion.excited;
         reactionText = 'Acrobatic flip! Ready for action, what is next?';
         animation = 'front_flip';
         break;
       case CharacterGesture.tickle:
+        SoundFxService().playTapChime();
         reactionEmotion = CharacterEmotion.playful;
         reactionText = 'Check out these moves! Let us make things happen.';
         animation = 'wave_dance';

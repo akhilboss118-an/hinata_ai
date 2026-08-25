@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/services/sound_fx_service.dart';
 import '../engine/character_controller.dart';
 import '../models/spider_suit.dart';
 import '../models/stage_environment.dart';
@@ -173,7 +174,7 @@ class _WardrobeBottomSheetState extends ConsumerState<WardrobeBottomSheet> with 
 
         return InkWell(
           onTap: () {
-            HapticFeedback.mediumImpact();
+            SoundFxService().playNanotechEquip();
             controller.setSuit(suit);
           },
           borderRadius: BorderRadius.circular(16),
@@ -299,7 +300,7 @@ class _WardrobeBottomSheetState extends ConsumerState<WardrobeBottomSheet> with 
 
         return InkWell(
           onTap: () {
-            HapticFeedback.mediumImpact();
+            SoundFxService().playNanotechEquip();
             controller.setEnvironment(env);
           },
           borderRadius: BorderRadius.circular(16),

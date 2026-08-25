@@ -386,6 +386,156 @@
       return window.startHinataSpeech(onResult, onError, null);
     };
   </script>
+  <!-- Superhero Web Audio FX Synthesizer (Zero asset dependency) -->
+  <script>
+    (function() {
+      var audioCtx = null;
+      function getAudioContext() {
+        if (!audioCtx) {
+          var AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            audioCtx = new AudioContext();
+          }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      window.playHeroSound = function(type) {
+        try {
+          var ctx = getAudioContext();
+          if (!ctx) return;
+          var t = ctx.currentTime;
+
+          if (type === 'thwip') {
+            // Authentic pneumatic web-shoot 'THWIP!'
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            var filter = ctx.createBiquadFilter();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(1600, t);
+            osc.frequency.exponentialRampToValueAtTime(180, t + 0.11);
+
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(2200, t);
+            filter.frequency.exponentialRampToValueAtTime(600, t + 0.11);
+            filter.Q.setValueAtTime(3.0, t);
+
+            gain.gain.setValueAtTime(0.35, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
+
+            // White noise burst for air puff
+            var bufferSize = ctx.sampleRate * 0.08;
+            var noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            var output = noiseBuffer.getChannelData(0);
+            for (var i = 0; i < bufferSize; i++) {
+              output[i] = Math.random() * 2 - 1;
+            }
+            var whiteNoise = ctx.createBufferSource();
+            whiteNoise.buffer = noiseBuffer;
+            var noiseGain = ctx.createGain();
+            noiseGain.gain.setValueAtTime(0.2, t);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            whiteNoise.connect(noiseGain);
+            noiseGain.connect(ctx.destination);
+
+            osc.start(t);
+            osc.stop(t + 0.12);
+            whiteNoise.start(t);
+            whiteNoise.stop(t + 0.08);
+
+          } else if (type === 'spider_sense') {
+            // Harmonic vibrating Spider-Sense pulse
+            var osc1 = ctx.createOscillator();
+            var osc2 = ctx.createOscillator();
+            var gain = ctx.createGain();
+
+            osc1.type = 'sine';
+            osc2.type = 'triangle';
+            osc1.frequency.setValueAtTime(660, t);
+            osc1.frequency.setValueAtTime(880, t + 0.08);
+            osc1.frequency.setValueAtTime(1100, t + 0.16);
+            osc2.frequency.setValueAtTime(330, t);
+
+            gain.gain.setValueAtTime(0.22, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc1.start(t);
+            osc1.stop(t + 0.30);
+            osc2.start(t);
+            osc2.stop(t + 0.30);
+
+          } else if (type === 'nanotech_equip') {
+            // Holographic power-up sweep
+            var freqs = [350, 520, 700, 1040];
+            freqs.forEach(function(f, idx) {
+              var osc = ctx.createOscillator();
+              var gain = ctx.createGain();
+              var startTime = t + (idx * 0.06);
+
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(f, startTime);
+              osc.frequency.exponentialRampToValueAtTime(f * 1.5, startTime + 0.18);
+
+              gain.gain.setValueAtTime(0.18, startTime);
+              gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.18);
+
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(startTime);
+              osc.stop(startTime + 0.20);
+            });
+
+          } else if (type === 'tap_chime') {
+            // Subtle tactile high-tech pop
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(920, t);
+            osc.frequency.exponentialRampToValueAtTime(340, t + 0.06);
+            gain.gain.setValueAtTime(0.18, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(t);
+            osc.stop(t + 0.07);
+
+          } else if (type === 'whoosh') {
+            // Aerodynamic web-swing whoosh
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            var filter = ctx.createBiquadFilter();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(140, t);
+            osc.frequency.linearRampToValueAtTime(420, t + 0.12);
+            osc.frequency.linearRampToValueAtTime(90, t + 0.25);
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(800, t);
+            gain.gain.setValueAtTime(0.25, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(t);
+            osc.stop(t + 0.26);
+          }
+        } catch (e) {
+          console.log('Audio FX notice: ', e);
+        }
+      };
+    })();
+  </script>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 </head>
 
