@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:js' as js;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/utils/js_interop/js_interop.dart';
 import 'character_state.dart';
 import '../models/character_emotion.dart';
 import '../models/character_gesture.dart';
@@ -44,7 +44,7 @@ class CharacterController extends StateNotifier<CharacterState> {
         );
         if (kIsWeb) {
           try {
-            js.context.callMethod('applySpiderSuit', [suit.id]);
+            callJsMethod('applySpiderSuit', [suit.id]);
           } catch (_) {}
         }
       }
@@ -56,7 +56,7 @@ class CharacterController extends StateNotifier<CharacterState> {
     state = state.copyWith(currentSuit: suit);
     if (kIsWeb) {
       try {
-        js.context.callMethod('applySpiderSuit', [suit.id]);
+        callJsMethod('applySpiderSuit', [suit.id]);
       } catch (_) {}
     }
     try {

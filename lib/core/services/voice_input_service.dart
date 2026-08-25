@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'dart:js' as js;
+import '../utils/js_interop/js_interop.dart';
 
 /// Cross-platform Voice Input Service for Mobile & Web browsers
 /// Utilizes Web Speech Recognition API with mobile Safari & Chrome compatibility
@@ -15,12 +15,12 @@ class VoiceInputService {
   bool get isSupported {
     if (!kIsWeb) return false;
     try {
-      if (js.context.hasProperty('hinataSpeech')) {
-        final hinataSpeech = js.context['hinataSpeech'];
+      if (jsContext.hasProperty('hinataSpeech')) {
+        final hinataSpeech = jsContext['hinataSpeech'];
         return hinataSpeech.callMethod('hasSupport', []) == true;
       }
-      return js.context.hasProperty('SpeechRecognition') ||
-          js.context.hasProperty('webkitSpeechRecognition');
+      return jsContext.hasProperty('SpeechRecognition') ||
+          jsContext.hasProperty('webkitSpeechRecognition');
     } catch (_) {
       return false;
     }
@@ -39,7 +39,7 @@ class VoiceInputService {
 
     try {
       // Direct call to global helper in web/index.html
-      final success = js.context.callMethod('startHinataSpeech', [
+      final success = jsContext.callMethod('startHinataSpeech', [
         (String text) {
           _isListening = false;
           onStateChanged?.call(false);
@@ -73,7 +73,7 @@ class VoiceInputService {
     _isListening = false;
     if (kIsWeb) {
       try {
-        js.context.callMethod('stopHinataSpeech', []);
+        callJsMethod('stopHinataSpeech', []);
       } catch (_) {}
     }
   }

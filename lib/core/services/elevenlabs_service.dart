@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'dart:js' as js;
+import '../utils/js_interop/js_interop.dart';
 import '../../features/character/models/character_emotion.dart';
 
 /// ElevenLabs AI Voice Service featuring Spider-Man (Peter Parker) Voice with emotional modulation
@@ -76,7 +76,7 @@ class ElevenLabsService {
 
         if (response.statusCode == 200) {
           final base64Audio = base64Encode(response.bodyBytes);
-          js.context.callMethod('playAudioBase64', [base64Audio]);
+          callJsMethod('playAudioBase64', [base64Audio]);
           onFinished?.call();
           return;
         } else {
@@ -91,7 +91,7 @@ class ElevenLabsService {
     if (kIsWeb) {
       final pitch = emotion?.voicePitch ?? 1.20;
       final rate = emotion?.voiceRate ?? 1.10;
-      js.context.callMethod('speakSpiderMan', [clean, pitch, rate]);
+      callJsMethod('speakSpiderMan', [clean, pitch, rate]);
       onFinished?.call();
     } else {
       onFinished?.call();
@@ -100,7 +100,7 @@ class ElevenLabsService {
 
   void stop() {
     if (kIsWeb) {
-      js.context.callMethod('stopAllSpeech', []);
+      callJsMethod('stopAllSpeech', []);
     }
   }
 }

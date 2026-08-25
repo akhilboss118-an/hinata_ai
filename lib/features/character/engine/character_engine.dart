@@ -1,9 +1,9 @@
-import 'dart:js' as js;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:hinata_ai/app/theme/app_colors.dart';
+import '../../../core/utils/js_interop/js_interop.dart';
 import '../models/character_emotion.dart';
 import '../models/character_gesture.dart';
 import 'character_controller.dart';
@@ -189,7 +189,7 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         try {
-          js.context.callMethod('applySpiderSuit', [suit.id]);
+          callJsMethod('applySpiderSuit', [suit.id]);
         } catch (_) {}
       });
     }

@@ -208,6 +208,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         text: _isSignUp ? 'Create Account' : 'Sign In',
                         onPressed: _submitForm,
                       ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _isSignUp ? 'Already have an account? ' : "Don't have an account? ",
+                            style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isSignUp = !_isSignUp;
+                              });
+                            },
+                            child: Text(
+                              _isSignUp ? 'Sign In' : 'Sign Up',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF64D5F4),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 16),
                     ],
 
