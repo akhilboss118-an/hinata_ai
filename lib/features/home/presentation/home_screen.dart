@@ -4,12 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:hinata_ai/app/theme/app_colors.dart';
 import 'package:hinata_ai/core/services/elevenlabs_service.dart';
 import 'package:hinata_ai/core/services/voice_input_service.dart';
+import 'package:hinata_ai/features/character/models/character_emotion.dart';
 import 'package:hinata_ai/features/character/engine/character_controller.dart';
 import 'package:hinata_ai/features/character/engine/character_engine.dart';
 import 'package:hinata_ai/features/chat/controllers/chat_controller.dart';
@@ -86,7 +86,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final characterState = ref.watch(characterControllerProvider);
-    final chatState = ref.watch(chatControllerProvider);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -111,7 +110,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // 3D Speech Reaction Subtitle Pill (auto-fading)
                   if (characterState.activeReactionText != null &&
                       characterState.activeReactionText!.isNotEmpty)
-                    _buildSubtitleBubble(characterState.activeReactionText!),
+                    _buildSubtitleBubble(
+                      characterState.activeReactionText!,
+                      emotion: characterState.currentEmotion,
+                    ),
 
                   // Thinking pill
                   if (characterState.isThinking) _buildThinkingPill(),
@@ -130,6 +132,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ─────────────────────────── TOP APP BAR ───────────────────────────
 
   Widget _buildTopBar(BuildContext context) {
+    final characterState = ref.watch(characterControllerProvider);
+
     return SafeArea(
       bottom: false,
       child: Padding(
@@ -143,6 +147,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               tooltip: 'Open Menu',
               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
             ),
+
+            // ─── POLISHED ANIMATED EMOTION / MOOD INDICATOR ───
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 450),
+              curve: Curves.easeInOut,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF101622).withValues(alpha: 0.88),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: characterState.currentEmotion.color.withValues(alpha: 0.45),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: characterState.currentEmotion.color.withValues(alpha: 0.20),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 350),
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(scale: animation, child: child),
+                ),
+                child: Row(
+                  key: ValueKey(characterState.currentEmotion),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      characterState.currentEmotion.emoji,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Mood: ${characterState.currentEmotion.label.toUpperCase()}',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: characterState.currentEmotion.color,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
             Row(
               children: [
                 // Memory Vault Quick Action
@@ -272,10 +326,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // ──────────────────────── SUBTITLE SPEECH BUBBLE ───────────────────────
 
-  Widget _buildSubtitleBubble(String text) {
+  Widget _buildSubtitleBubble(String text, {CharacterEmotion emotion = CharacterEmotion.neutral}) {
     return _FadingSubtitleBubble(
       key: ValueKey(text),
       text: text,
+      emotion: emotion,
       onDismissed: () {
         ref.read(characterControllerProvider.notifier).clearSpeech();
       },
@@ -575,11 +630,13 @@ class _TypewriterTextState extends State<_TypewriterText> {
 
 class _FadingSubtitleBubble extends StatefulWidget {
   final String text;
+  final CharacterEmotion emotion;
   final VoidCallback? onDismissed;
 
   const _FadingSubtitleBubble({
     super.key,
     required this.text,
+    this.emotion = CharacterEmotion.neutral,
     this.onDismissed,
   });
 
@@ -628,14 +685,18 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
     });
 
     if (kIsWeb) {
-      ElevenLabsService().speakSpiderMan(widget.text, onFinished: () {
-        if (!mounted) return;
-        _dismissTimer?.cancel();
-        // Dialogue audio completed: keep visible for 1.8s buffer then fade out
-        _dismissTimer = Timer(const Duration(milliseconds: 1800), () {
-          _finishAndDismiss();
-        });
-      });
+      ElevenLabsService().speakSpiderMan(
+        widget.text,
+        emotion: widget.emotion,
+        onFinished: () {
+          if (!mounted) return;
+          _dismissTimer?.cancel();
+          // Dialogue audio completed: keep visible for 1.8s buffer then fade out
+          _dismissTimer = Timer(const Duration(milliseconds: 1800), () {
+            _finishAndDismiss();
+          });
+        },
+      );
     }
   }
 

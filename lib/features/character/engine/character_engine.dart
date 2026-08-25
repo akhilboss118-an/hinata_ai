@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:hinata_ai/app/theme/app_colors.dart';
-import 'package:hinata_ai/app/theme/app_shadows.dart';
-import 'package:hinata_ai/app/theme/app_typography.dart';
-import 'package:hinata_ai/app/theme/app_radius.dart';
 import '../models/character_emotion.dart';
 import '../models/character_gesture.dart';
 import 'character_controller.dart';
@@ -56,21 +53,26 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
       stageAlignment = const Alignment(0.0, -0.25);
     }
 
+    final auraColor = characterState.currentAuraColor;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Subtle Radial Gradient Background (Stitch spec)
+            // Subtle Dynamic Radial Gradient Background reacting to Emotion State
             Positioned.fill(
-              child: DecoratedBox(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeInOut,
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     center: const Alignment(0, -0.1),
-                    radius: 1.1,
+                    radius: 1.15,
                     colors: [
-                      AppColors.surfaceCardHover.withValues(alpha: 0.4),
-                      AppColors.background.withValues(alpha: 0.9),
+                      auraColor.withValues(alpha: 0.12),
+                      AppColors.surfaceCardHover.withValues(alpha: 0.25),
+                      AppColors.background.withValues(alpha: 0.95),
                       AppColors.backgroundDeep,
                     ],
                   ),
@@ -78,16 +80,16 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
               ),
             ),
 
-            // Decorative Ethereal Rings (glass-tube halo, lifted above center)
+            // Decorative Dynamic Ethereal Rings reacting to Emotion
             _EtherealRing(
               diameter: _clampWidth(constraints.maxWidth, 0.95, 450),
               liftFactor: 0.10,
-              borderColor: AppColors.primaryLight.withValues(alpha: 0.10),
+              borderColor: auraColor.withValues(alpha: 0.12),
             ),
             _EtherealRing(
               diameter: _clampWidth(constraints.maxWidth, 0.85, 400),
               liftFactor: 0.10,
-              borderColor: AppColors.primaryLight.withValues(alpha: 0.20),
+              borderColor: auraColor.withValues(alpha: 0.22),
             ),
 
             // Dynamic 3D Character Stage wrapped in AnimatedAlign based on animation state
@@ -151,22 +153,23 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
   Widget _buildModelStage(CharacterState state) {
     String modelPath;
     final anim = state.currentAnimation.toLowerCase();
+    final emotion = state.currentEmotion;
 
-    if (state.isThinking || anim == 'thinking' || anim == 'think' || anim == 'ponder') {
+    if (state.isThinking || anim == 'thinking' || anim == 'think' || anim == 'ponder' || emotion == CharacterEmotion.thinking || emotion == CharacterEmotion.confused) {
       modelPath = 'assets/models/thinking.glb';
-    } else if (anim == 'dance' || anim == 'wave_dance' || anim == 'hiphop' || anim == 'celebrate') {
+    } else if (anim == 'dance' || anim == 'wave_dance' || anim == 'hiphop' || anim == 'celebrate' || emotion == CharacterEmotion.playful || emotion == CharacterEmotion.laughing) {
       modelPath = 'assets/models/wave_dance.glb';
     } else if (anim == 'front_flip' || anim == 'flip' || anim == 'jump' || anim == 'acrobatic' || anim == 'happybounce') {
       modelPath = 'assets/models/front_flip.glb';
-    } else if (anim == 'swing_landing' || anim == 'landing' || anim == 'crouch' || anim == 'hero_landing') {
+    } else if (anim == 'swing_landing' || anim == 'landing' || anim == 'crouch' || anim == 'hero_landing' || emotion == CharacterEmotion.surprised) {
       modelPath = 'assets/models/swing_landing.glb';
     } else if (anim == 'wave' || anim == 'waving' || anim == 'hi' || anim == 'hello') {
       modelPath = 'assets/models/waving_gesture.glb';
-    } else if (anim == 'clap' || anim == 'clapping' || anim == 'cheer') {
+    } else if (anim == 'clap' || anim == 'clapping' || anim == 'cheer' || (emotion == CharacterEmotion.happy && !state.isTalking)) {
       modelPath = 'assets/models/clapping.glb';
-    } else if (anim == 'disappointed' || anim == 'annoyed' || anim == 'pout' || anim == 'disappoint' || state.currentEmotion == CharacterEmotion.annoyed) {
+    } else if (anim == 'disappointed' || anim == 'annoyed' || anim == 'pout' || anim == 'disappoint' || emotion == CharacterEmotion.annoyed || emotion == CharacterEmotion.angry) {
       modelPath = 'assets/models/disappointed.glb';
-    } else if (anim == 'sad' || anim == 'crying' || state.currentEmotion == CharacterEmotion.sad) {
+    } else if (anim == 'sad' || anim == 'crying' || emotion == CharacterEmotion.sad || emotion == CharacterEmotion.crying || emotion == CharacterEmotion.sleepy) {
       modelPath = 'assets/models/sad_idle.glb';
     } else if (state.isTalking || anim == 'talk' || anim == 'talking' || anim == 'speech') {
       modelPath = (state.interactionCount % 2 == 0)
@@ -182,7 +185,7 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
       child: Padding(
         padding: const EdgeInsets.only(bottom: 20),
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 350),
+          duration: const Duration(milliseconds: 400),
           switchInCurve: Curves.easeIn,
           switchOutCurve: Curves.easeOut,
           child: ModelViewer(
@@ -207,7 +210,7 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
   }
 }
 
-/// Decorative blurred halo ring behind the character (Stitch ethereal rings)
+/// Decorative dynamic halo ring behind the character (Stitch ethereal rings)
 class _EtherealRing extends StatelessWidget {
   final double diameter;
   final double liftFactor;
@@ -224,12 +227,14 @@ class _EtherealRing extends StatelessWidget {
     return IgnorePointer(
       child: Transform.translate(
         offset: Offset(0, -diameter * liftFactor),
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
           width: diameter,
           height: diameter,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: borderColor, width: 0.5),
+            border: Border.all(color: borderColor, width: 0.8),
           ),
         ),
       ),

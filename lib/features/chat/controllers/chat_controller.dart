@@ -262,35 +262,7 @@ class ChatController extends StateNotifier<ChatState> {
       String targetAnimation = aiResponse.animation.isNotEmpty ? aiResponse.animation : 'talking';
       CharacterEmotion targetEmotion = aiResponse.emotion;
 
-      if (targetAnimation == 'idle' || targetAnimation.isEmpty) {
-        final lower = text.trim().toLowerCase();
-        if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey') || lower.contains('wave')) {
-          targetAnimation = 'wave';
-          targetEmotion = CharacterEmotion.happy;
-        } else if (lower.contains('flip') || lower.contains('jump') || lower.contains('trick')) {
-          targetAnimation = 'front_flip';
-          targetEmotion = CharacterEmotion.excited;
-        } else if (lower.contains('land') || lower.contains('crouch') || lower.contains('hero')) {
-          targetAnimation = 'swing_landing';
-          targetEmotion = CharacterEmotion.excited;
-        } else if (lower.contains('dance') || lower.contains('party') || lower.contains('celebrate')) {
-          targetAnimation = 'wave_dance';
-          targetEmotion = CharacterEmotion.excited;
-        } else if (lower.contains('happy') || lower.contains('clap') || lower.contains('awesome') || lower.contains('great')) {
-          targetAnimation = 'clap';
-          targetEmotion = CharacterEmotion.excited;
-        } else if (lower.contains('disappointed') || lower.contains('bad') || lower.contains('hate')) {
-          targetAnimation = 'disappointed';
-          targetEmotion = CharacterEmotion.annoyed;
-        } else if (lower.contains('sad') || lower.contains('cry') || lower.contains('depressed')) {
-          targetAnimation = 'sad';
-          targetEmotion = CharacterEmotion.sad;
-        } else {
-          targetAnimation = 'talking';
-        }
-      }
-
-      // Trigger 3D Character Reaction (with guaranteed >6s hold)
+      // Trigger 3D Character Reaction with emotion memory & decay
       _charController.applyAiReaction(
         emotion: targetEmotion,
         animation: targetAnimation,
@@ -304,8 +276,8 @@ class ChatController extends StateNotifier<ChatState> {
         sender: 'hinata',
         text: aiResponse.reply,
         timestamp: DateTime.now(),
-        emotion: aiResponse.emotion,
-        animation: aiResponse.animation,
+        emotion: targetEmotion,
+        animation: targetAnimation,
         intensity: aiResponse.intensity,
       );
 
@@ -334,9 +306,9 @@ class ChatController extends StateNotifier<ChatState> {
       debugPrint('ChatController error: $e');
       _charController.setThinking(false);
 
-      final fallbackText = "I'm always swinging around! How can I help you out today? 🕷️✨";
+      const fallbackText = "I'm always swinging around! How can I help you out today? 🕷️✨";
       _charController.applyAiReaction(
-        emotion: CharacterEmotion.happy,
+        emotion: CharacterEmotion.neutral,
         animation: 'talking',
         intensity: 0.7,
         speech: fallbackText,
@@ -347,6 +319,7 @@ class ChatController extends StateNotifier<ChatState> {
         sender: 'hinata',
         text: fallbackText,
         timestamp: DateTime.now(),
+        emotion: CharacterEmotion.neutral,
       );
       _localMessages.add(fallbackMsg);
       await _persistMessages(uid);

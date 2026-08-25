@@ -148,17 +148,35 @@
       }
     };
 
-    window.speakSpiderMan = function (text, onEnd) {
+    window.speakSpiderMan = function (text, pitch, rate, onEnd) {
       if (!('speechSynthesis' in window) || window.isVoiceMuted) {
-        if (onEnd) onEnd();
+        if (typeof onEnd === 'function') onEnd();
+        else if (typeof pitch === 'function') pitch();
         return;
       }
       window.stopAllSpeech();
 
       var cleaned = cleanForSpeechHinata(text);
       if (!cleaned) {
-        if (onEnd) onEnd();
+        if (typeof onEnd === 'function') onEnd();
+        else if (typeof pitch === 'function') pitch();
         return;
+      }
+
+      // Handle backward-compatible argument signatures
+      var actualEnd = null;
+      var actualPitch = 1.22;
+      var actualRate = 1.12;
+
+      if (typeof pitch === 'function') {
+        actualEnd = pitch;
+      } else if (typeof rate === 'function') {
+        actualEnd = rate;
+        if (typeof pitch === 'number') actualPitch = pitch;
+      } else {
+        if (typeof pitch === 'number') actualPitch = pitch;
+        if (typeof rate === 'number') actualRate = rate;
+        if (typeof onEnd === 'function') actualEnd = onEnd;
       }
 
       var voices = availableVoices.length ? availableVoices : (window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
@@ -169,17 +187,17 @@
                         voices[0];
 
       var u = new SpeechSynthesisUtterance(cleaned);
-      u.pitch = 1.22; // Peter Parker energetic youthful pitch
-      u.rate = 1.12;  // Quick, agile superhero pace
+      u.pitch = actualPitch; // Emotion-modulated Peter Parker pitch
+      u.rate = actualRate;   // Emotion-modulated delivery pace
       u.volume = 1.0;
       if (spideyVoice) {
         u.voice = spideyVoice;
       }
       u.onend = function () {
-        if (onEnd) onEnd();
+        if (actualEnd) actualEnd();
       };
       u.onerror = function () {
-        if (onEnd) onEnd();
+        if (actualEnd) actualEnd();
       };
       window.speechSynthesis.speak(u);
     };

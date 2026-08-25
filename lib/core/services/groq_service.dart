@@ -48,7 +48,7 @@ class GroqService {
     }
 
     try {
-      final systemPrompt = '''
+      const systemPrompt = '''
 You are Spider-Man (Peter Parker) — the friendly neighborhood superhero and your personal AI companion.
 
 LANGUAGE RULES (STRICT & ABSOLUTE):
@@ -58,12 +58,12 @@ LANGUAGE RULES (STRICT & ABSOLUTE):
 PERSONALITY & TONE:
 - Friendly, warm, energetic, witty, and dependable — like Peter Parker / Spider-Man chatting with his best friend!
 - Keep responses concise and punchy: 2-3 sentences.
-- Always react directly and naturally to what the user said or answered in the previous turn.
+- Always analyze the context, sentiment, and emotional meaning of the conversation turn.
 
 You MUST respond ONLY with valid JSON matching this schema:
 {
   "reply": "string (your 100% English response following all rules above)",
-  "emotion": "neutral | happy | excited | laughing | sad | crying | angry | annoyed | shy | embarrassed | surprised | thinking",
+  "emotion": "neutral | happy | excited | sad | surprised | angry | confused | love | tired | playful | laughing | crying | thinking",
   "animation": "wave | clap | talking | disappointed | sad | idle | thinking | front_flip | swing_landing | wave_dance",
   "intensity": 0.8
 }
@@ -169,59 +169,20 @@ You MUST respond ONLY with valid JSON matching this schema:
 
       final parsed = jsonDecode(cleanJson) as Map<String, dynamic>;
       final reply = parsed['reply'] as String? ?? 'Hey there! How can I help you today?';
-      final emotionStr = (parsed['emotion'] as String? ?? 'happy').toLowerCase();
+      final emotionStr = parsed['emotion'] as String?;
       final animationStr = parsed['animation'] as String? ?? 'talking';
       final intensity = (parsed['intensity'] as num?)?.toDouble() ?? 0.8;
 
-      CharacterEmotion emotion = CharacterEmotion.happy;
-      switch (emotionStr) {
-        case 'excited':
-          emotion = CharacterEmotion.excited;
-          break;
-        case 'laughing':
-          emotion = CharacterEmotion.laughing;
-          break;
-        case 'sad':
-          emotion = CharacterEmotion.sad;
-          break;
-        case 'crying':
-          emotion = CharacterEmotion.crying;
-          break;
-        case 'angry':
-          emotion = CharacterEmotion.angry;
-          break;
-        case 'annoyed':
-          emotion = CharacterEmotion.annoyed;
-          break;
-        case 'shy':
-          emotion = CharacterEmotion.shy;
-          break;
-        case 'embarrassed':
-          emotion = CharacterEmotion.embarrassed;
-          break;
-        case 'surprised':
-          emotion = CharacterEmotion.surprised;
-          break;
-        case 'thinking':
-          emotion = CharacterEmotion.thinking;
-          break;
-        case 'neutral':
-          emotion = CharacterEmotion.neutral;
-          break;
-        default:
-          emotion = CharacterEmotion.happy;
-      }
-
       return GeminiCompanionResponse(
         reply: reply,
-        emotion: emotion,
+        emotion: CharacterEmotion.fromString(emotionStr),
         animation: animationStr,
         intensity: intensity,
       );
     } catch (e) {
       return GeminiCompanionResponse(
         reply: rawJson,
-        emotion: CharacterEmotion.happy,
+        emotion: CharacterEmotion.neutral,
         animation: 'talking',
       );
     }

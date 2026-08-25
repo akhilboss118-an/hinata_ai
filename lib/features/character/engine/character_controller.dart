@@ -11,21 +11,26 @@ final characterControllerProvider =
 });
 
 class CharacterController extends StateNotifier<CharacterState> {
+  /// Centralized configurable duration before an active emotion decays toward neutral
+  static const Duration emotionDecayDuration = Duration(seconds: 10);
+
   Timer? _idleTimer;
   Timer? _reactionResetTimer;
+  Timer? _emotionDecayTimer;
   final Random _random = Random();
 
   CharacterController() : super(const CharacterState()) {
     _startNaturalIdleLoop();
   }
 
-  ///  /// Updates the thinking state when AI is generating responses
+  /// Updates the thinking state when AI is generating responses
   void setThinking(bool thinking) {
     if (thinking) {
       _reactionResetTimer?.cancel();
       state = state.copyWith(
         isThinking: true,
         currentAnimation: 'thinking',
+        currentEmotion: CharacterEmotion.thinking,
       );
     } else {
       state = state.copyWith(
@@ -33,6 +38,20 @@ class CharacterController extends StateNotifier<CharacterState> {
         currentAnimation: 'idle',
       );
     }
+  }
+
+  /// Sets a specific emotion with memory tracking and decay scheduling
+  void setEmotion(CharacterEmotion newEmotion) {
+    if (state.currentEmotion == newEmotion) return;
+
+    final prev = state.currentEmotion;
+    state = state.copyWith(
+      currentEmotion: newEmotion,
+      previousEmotion: prev,
+      lastEmotionChangedAt: DateTime.now(),
+    );
+
+    _scheduleEmotionDecay();
   }
 
   /// Applies structured AI response reaction (emotion + animation + intensity)
@@ -43,17 +62,24 @@ class CharacterController extends StateNotifier<CharacterState> {
     String? speech,
   }) {
     _reactionResetTimer?.cancel();
+    _emotionDecayTimer?.cancel();
+
+    final prev = state.currentEmotion;
+    final resolvedAnim = _resolveAnimationForEmotion(emotion, requestedAnimation: animation);
+
     state = state.copyWith(
       currentEmotion: emotion,
-      currentAnimation: animation,
+      previousEmotion: prev,
+      lastEmotionChangedAt: DateTime.now(),
+      currentAnimation: resolvedAnim,
       intensity: intensity,
       isThinking: false,
       isTalking: true,
       activeReactionText: speech,
     );
 
-    // Guaranteed animation hold duration > 6 seconds (7s - 10s based on speech length)
-    final int durationMs = _getAnimationDurationMs(animation, speech: speech);
+    // Guaranteed animation hold duration based on speech length / animation
+    final int durationMs = _getAnimationDurationMs(resolvedAnim, speech: speech);
 
     _reactionResetTimer = Timer(Duration(milliseconds: durationMs), () {
       if (mounted) {
@@ -63,11 +89,85 @@ class CharacterController extends StateNotifier<CharacterState> {
         );
       }
     });
+
+    // Schedule decay toward neutral after active reaction ends
+    _scheduleEmotionDecay();
+  }
+
+  /// Resolves the optimal available .glb animation for a given emotion
+  String _resolveAnimationForEmotion(CharacterEmotion emotion, {String? requestedAnimation}) {
+    final req = requestedAnimation?.trim().toLowerCase() ?? '';
+    if (req.isNotEmpty && req != 'idle' && req != 'standing' && req != 'smile') {
+      return req;
+    }
+
+    switch (emotion) {
+      case CharacterEmotion.excited:
+        return 'front_flip';
+      case CharacterEmotion.playful:
+      case CharacterEmotion.laughing:
+        return 'wave_dance';
+      case CharacterEmotion.happy:
+      case CharacterEmotion.affectionate:
+        return 'clap';
+      case CharacterEmotion.sad:
+      case CharacterEmotion.crying:
+      case CharacterEmotion.sleepy:
+        return 'sad';
+      case CharacterEmotion.angry:
+      case CharacterEmotion.annoyed:
+        return 'disappointed';
+      case CharacterEmotion.surprised:
+        return 'swing_landing';
+      case CharacterEmotion.confused:
+      case CharacterEmotion.thinking:
+      case CharacterEmotion.shy:
+      case CharacterEmotion.embarrassed:
+        return 'thinking';
+      case CharacterEmotion.neutral:
+        return 'talking';
+    }
+  }
+
+  /// Schedules gentle emotion decay toward neutral when conversation is idle
+  void _scheduleEmotionDecay() {
+    _emotionDecayTimer?.cancel();
+
+    if (state.currentEmotion == CharacterEmotion.neutral) return;
+
+    _emotionDecayTimer = Timer(emotionDecayDuration, () {
+      if (!mounted) return;
+      if (state.isThinking || state.isTalking || state.activeGesture != null) {
+        _scheduleEmotionDecay();
+        return;
+      }
+
+      // Step-down decay: EXCITED -> HAPPY -> NEUTRAL, others -> NEUTRAL
+      CharacterEmotion nextEmotion = CharacterEmotion.neutral;
+      if (state.currentEmotion == CharacterEmotion.excited) {
+        nextEmotion = CharacterEmotion.happy;
+      } else if (state.currentEmotion == CharacterEmotion.laughing) {
+        nextEmotion = CharacterEmotion.happy;
+      } else {
+        nextEmotion = CharacterEmotion.neutral;
+      }
+
+      final prev = state.currentEmotion;
+      state = state.copyWith(
+        currentEmotion: nextEmotion,
+        previousEmotion: prev,
+        lastEmotionChangedAt: DateTime.now(),
+      );
+
+      // If still not neutral, schedule next step down
+      if (nextEmotion != CharacterEmotion.neutral) {
+        _scheduleEmotionDecay();
+      }
+    });
   }
 
   /// Returns reaction duration in milliseconds (guaranteed minimum 7000ms / 7 seconds)
   int _getAnimationDurationMs(String animation, {String? speech}) {
-    // Calculate reading/speaking duration based on word count
     int computedFromSpeech = 7000;
     if (speech != null && speech.trim().isNotEmpty) {
       final wordCount = speech.trim().split(RegExp(r'\s+')).length;
@@ -100,6 +200,8 @@ class CharacterController extends StateNotifier<CharacterState> {
   /// Handles Talking-Tom style interactive gesture triggers
   void handleGesture(CharacterGesture gesture) {
     _reactionResetTimer?.cancel();
+    _emotionDecayTimer?.cancel();
+
     final newCount = state.interactionCount + 1;
     final newAffection = min(100, state.affectionLevel + 1);
 
@@ -124,12 +226,12 @@ class CharacterController extends StateNotifier<CharacterState> {
         animation = 'thinking';
         break;
       case CharacterGesture.poke:
-        reactionEmotion = CharacterEmotion.happy;
+        reactionEmotion = CharacterEmotion.playful;
         reactionText = 'Hey there! What are you working on today?';
         animation = 'talking';
         break;
       case CharacterGesture.hold:
-        reactionEmotion = CharacterEmotion.excited;
+        reactionEmotion = CharacterEmotion.affectionate;
         reactionText = 'I have got your back! Let us get things done.';
         animation = 'clap';
         break;
@@ -139,14 +241,17 @@ class CharacterController extends StateNotifier<CharacterState> {
         animation = 'front_flip';
         break;
       case CharacterGesture.tickle:
-        reactionEmotion = CharacterEmotion.happy;
+        reactionEmotion = CharacterEmotion.playful;
         reactionText = 'Check out these moves! Let us make things happen.';
         animation = 'wave_dance';
         break;
     }
 
+    final prev = state.currentEmotion;
     state = state.copyWith(
       currentEmotion: reactionEmotion,
+      previousEmotion: prev,
+      lastEmotionChangedAt: DateTime.now(),
       currentAnimation: animation,
       activeGesture: gesture,
       activeReactionText: reactionText,
@@ -165,6 +270,8 @@ class CharacterController extends StateNotifier<CharacterState> {
         );
       }
     });
+
+    _scheduleEmotionDecay();
   }
 
   /// Probabilistic natural idle micro-motion generator
@@ -200,6 +307,7 @@ class CharacterController extends StateNotifier<CharacterState> {
   void dispose() {
     _idleTimer?.cancel();
     _reactionResetTimer?.cancel();
+    _emotionDecayTimer?.cancel();
     super.dispose();
   }
 }

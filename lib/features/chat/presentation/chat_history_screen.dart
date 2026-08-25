@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_typography.dart';
-import '../../../app/theme/app_radius.dart';
 import '../../../core/utils/date_utils.dart';
-import '../../../shared/widgets/glass_card.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../auth/controllers/auth_state.dart';
 import '../controllers/chat_controller.dart';
-import '../models/chat_message.dart';
 import 'conversation_screen.dart';
 
 /// Screen displaying conversations and stored chat history

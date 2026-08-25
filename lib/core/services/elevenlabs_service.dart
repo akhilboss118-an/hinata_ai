@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:js' as js;
+import '../../features/character/models/character_emotion.dart';
 
-/// ElevenLabs AI Voice Service featuring Spider-Man (Peter Parker) Voice
+/// ElevenLabs AI Voice Service featuring Spider-Man (Peter Parker) Voice with emotional modulation
 class ElevenLabsService {
   final String apiKey;
   
@@ -21,8 +22,12 @@ class ElevenLabsService {
 
   bool get isConfigured => apiKey.isNotEmpty;
 
-  /// Speaks text using Spider-Man voice via ElevenLabs HD with automatic browser fallback
-  Future<void> speakSpiderMan(String text, {VoidCallback? onFinished}) async {
+  /// Speaks text using Spider-Man voice via ElevenLabs HD with emotional tone modulation and browser fallback
+  Future<void> speakSpiderMan(
+    String text, {
+    CharacterEmotion? emotion,
+    VoidCallback? onFinished,
+  }) async {
     if (text.trim().isEmpty) {
       onFinished?.call();
       return;
@@ -40,6 +45,16 @@ class ElevenLabsService {
       return;
     }
 
+    // Calculate stability based on emotion (lower stability = more expressive/excited)
+    double stability = 0.45;
+    if (emotion == CharacterEmotion.excited || emotion == CharacterEmotion.playful || emotion == CharacterEmotion.surprised) {
+      stability = 0.35;
+    } else if (emotion == CharacterEmotion.sad || emotion == CharacterEmotion.crying) {
+      stability = 0.60;
+    } else if (emotion == CharacterEmotion.affectionate) {
+      stability = 0.50;
+    }
+
     try {
       if (kIsWeb) {
         final url = Uri.parse('https://api.elevenlabs.io/v1/text-to-speech/$spiderManVoiceId');
@@ -53,7 +68,7 @@ class ElevenLabsService {
             'text': clean,
             'model_id': 'eleven_turbo_v2_5',
             'voice_settings': {
-              'stability': 0.45,
+              'stability': stability,
               'similarity_boost': 0.8,
             },
           }),
@@ -72,9 +87,11 @@ class ElevenLabsService {
       debugPrint('ElevenLabs error: $e. Falling back to browser Spider-Man voice');
     }
 
-    // Fallback: Web Speech Spider-Man voice
+    // Fallback: Web Speech Spider-Man voice with emotion-tuned pitch and speech rate
     if (kIsWeb) {
-      js.context.callMethod('speakSpiderMan', [clean]);
+      final pitch = emotion?.voicePitch ?? 1.20;
+      final rate = emotion?.voiceRate ?? 1.10;
+      js.context.callMethod('speakSpiderMan', [clean, pitch, rate]);
       onFinished?.call();
     } else {
       onFinished?.call();
