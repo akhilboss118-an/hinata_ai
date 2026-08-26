@@ -203,21 +203,20 @@ class ChatController extends StateNotifier<ChatState> {
     // Award XP for interaction (+20 if photo included, +15 for text)
     _charController.addAffinityXp(imageBytes != null ? 20 : 15);
 
-    // 2. Automatic Memory Extraction from user input (if text is substantial)
+    // 2. Automatic Memory Extraction from user input in parallel (non-blocking)
     if (text.trim().isNotEmpty) {
-      try {
-        final newMemory = await _memoryRepository.autoExtractAndSaveMemory(
-          uid: uid,
-          text: text,
-        );
+      _memoryRepository.autoExtractAndSaveMemory(
+        uid: uid,
+        text: text,
+      ).then((newMemory) {
         if (newMemory != null) {
           _localMemories.insert(0, newMemory);
           state = state.copyWith(memories: List.from(_localMemories));
           debugPrint('Auto-extracted memory to vault: ${newMemory.content}');
         }
-      } catch (e) {
+      }).catchError((e) {
         debugPrint('Memory extraction notice: $e');
-      }
+      });
     }
 
     try {
@@ -226,7 +225,7 @@ class ChatController extends StateNotifier<ChatState> {
           .where((m) => m.messageId != userMsg.messageId)
           .toList()
           .reversed
-          .take(8)
+          .take(6)
           .toList()
           .reversed
           .map((m) => {
@@ -239,19 +238,17 @@ class ChatController extends StateNotifier<ChatState> {
           .where((m) => m.messageId != userMsg.messageId)
           .toList()
           .reversed
-          .take(8)
+          .take(6)
           .map((m) => '${m.isUser ? "User" : "Hinata"}: ${m.text}')
           .toList()
           .reversed
           .toList();
 
-      final memoryStrings = _localMemories.take(10).map((m) => m.content).toList();
+      final memoryStrings = _localMemories.take(6).map((m) => m.content).toList();
 
       final prefs = await SharedPreferences.getInstance();
       final heroName = prefs.getString('hero_display_name') ?? 'Partner';
       final heroPersona = prefs.getString('hero_persona') ?? 'Best Buddy 🤝';
-
-      final stopwatch = Stopwatch()..start();
 
       // Request structured response from Gemini AI (with Multimodal Vision support) or Groq AI
       final GeminiCompanionResponse aiResponse;
@@ -282,12 +279,6 @@ class ChatController extends StateNotifier<ChatState> {
           recentHistory: recentHistory,
           memories: memoryStrings,
         );
-      }
-
-      // Smooth Thinking buffer
-      final int elapsed = stopwatch.elapsedMilliseconds;
-      if (elapsed < 1000) {
-        await Future.delayed(Duration(milliseconds: 1000 - elapsed));
       }
 
       // Determine animation and emotion

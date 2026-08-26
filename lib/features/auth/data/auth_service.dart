@@ -32,6 +32,8 @@ class AuthService {
       _customGoogleSignIn ??
       GoogleSignIn(
         scopes: const ['email', 'profile'],
+        serverClientId:
+            '769390720216-klfrki4vsutq41cjguqblesi9j65vh8p.apps.googleusercontent.com',
       );
 
   FirebaseFirestore? get _firestore {

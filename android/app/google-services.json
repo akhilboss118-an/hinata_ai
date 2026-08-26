@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "769390720216",
+    "project_id": "hinata-ai-cecd3-b498a",
+    "storage_bucket": "hinata-ai-cecd3-b498a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:769390720216:android:75fa02ff6678b50c4553ad",
+        "android_client_info": {
+          "package_name": "com.hinata.hinata_ai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "769390720216-klfrki4vsutq41cjguqblesi9j65vh8p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyZL1OUpoGbjR-_pSPRz0AsCODZL_-5EM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "769390720216-klfrki4vsutq41cjguqblesi9j65vh8p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

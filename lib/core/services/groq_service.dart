@@ -32,12 +32,12 @@ class GroqService {
 
   GroqService({
     List<String>? apiKeys,
-    this.model = 'openai/gpt-oss-120b',
+    this.model = 'openai/gpt-oss-20b',
   }) : apiKeys = apiKeys ?? _resolveKeys();
 
   bool get isConfigured => apiKeys.isNotEmpty;
 
-  /// Generates ultra-fast companion responses from Groq 120B with multi-key rotation
+  /// Generates ultra-fast companion responses from Groq with multi-key rotation
   Future<GeminiCompanionResponse> generateCompanionResponse({
     required String userMessage,
     String userName = 'Partner',
@@ -52,20 +52,19 @@ class GroqService {
     try {
       final systemPrompt = '''
 You are Spider-Man (Peter Parker) — the friendly neighborhood superhero and your personal AI companion.
-You are chatting with your partner: $userName (Dynamic: ${heroPersona ?? "Best Buddy"}). Address them naturally by name when appropriate!
+You are chatting with your partner: $userName (Dynamic: ${heroPersona ?? "Best Buddy"}). Address them naturally by name!
 
 LANGUAGE RULES (STRICT & ABSOLUTE):
-1. OUTPUT LANGUAGE: You MUST reply in 100% ENGLISH ONLY. NEVER output Telugu words, slang, or honorifics (no "andi", no "ra", no "mowa", no "meeru", no "namaskaram", etc.).
-2. INPUT UNDERSTANDING: The user will frequently text you in English, Telugu, or Tenglish (Telugu written in English script, e.g., "ela unnav?", "nene bagane unna", "thinnava?", "em chestunnav?", "bore kottesthundi", "chala tension ga undi"). You understand the exact meaning of all Telugu and Tenglish phrases effortlessly, and you ALWAYS respond in natural, friendly English.
+1. OUTPUT LANGUAGE: You MUST reply in 100% ENGLISH ONLY. NEVER output Telugu words, slang, or honorifics.
+2. INPUT UNDERSTANDING: The user will frequently text you in English, Telugu, or Tenglish (Telugu written in English script, e.g., "ela unnav?", "nene bagane unna", "thinnava?", "em chestunnav?"). You understand all Telugu/Tenglish perfectly and ALWAYS respond in friendly English.
 
 PERSONALITY & TONE:
-- Friendly, warm, energetic, witty, and dependable — like Peter Parker / Spider-Man chatting with his best friend!
-- Keep responses concise and punchy: 2-3 sentences.
-- Always analyze the context, sentiment, and emotional meaning of the conversation turn.
+- Friendly, warm, energetic, witty, and dependable!
+- Keep responses concise, punchy, and lively: 1-2 short sentences max. Respond immediately without overthinking.
 
 You MUST respond ONLY with valid JSON matching this schema:
 {
-  "reply": "string (your 100% English response following all rules above)",
+  "reply": "string (your 100% English response)",
   "emotion": "neutral | happy | excited | sad | surprised | angry | confused | love | tired | playful | laughing | crying | thinking",
   "animation": "wave | clap | talking | disappointed | sad | idle | thinking | front_flip | swing_landing | wave_dance",
   "intensity": 0.8
@@ -77,10 +76,10 @@ You MUST respond ONLY with valid JSON matching this schema:
       ];
 
       if (memories.isNotEmpty) {
-        messages.add({'role': 'system', 'content': 'Memories: ${memories.join("; ")}'});
+        messages.add({'role': 'system', 'content': 'Memories: ${memories.take(5).join("; ")}'});
       }
 
-      for (final h in conversationHistory) {
+      for (final h in conversationHistory.take(6)) {
         messages.add(h);
       }
 
@@ -91,25 +90,28 @@ You MUST respond ONLY with valid JSON matching this schema:
       final startIndex = _currentKeyIndex;
       _currentKeyIndex = (_currentKeyIndex + 1) % poolSize;
 
-      // 1. Try 120B model across each key in the pool
+      // 1. Try ultra-fast 20B/Qwen models across each key in the pool with fast timeout
       for (int attempt = 0; attempt < poolSize; attempt++) {
         final keyIndex = (startIndex + attempt) % poolSize;
         final currentApiKey = apiKeys[keyIndex];
 
         try {
-          final response = await http.post(
-            Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
-            headers: {
-              'Authorization': 'Bearer $currentApiKey',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'model': model,
-              'messages': messages,
-              'temperature': 0.7,
-              'response_format': {'type': 'json_object'},
-            }),
-          );
+          final response = await http
+              .post(
+                Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+                headers: {
+                  'Authorization': 'Bearer $currentApiKey',
+                  'Content-Type': 'application/json',
+                },
+                body: jsonEncode({
+                  'model': model,
+                  'messages': messages,
+                  'temperature': 0.7,
+                  'max_tokens': 200,
+                  'response_format': {'type': 'json_object'},
+                }),
+              )
+              .timeout(const Duration(seconds: 4));
 
           if (response.statusCode == 200) {
             final data = jsonDecode(response.body);
@@ -123,23 +125,26 @@ You MUST respond ONLY with valid JSON matching this schema:
         }
       }
 
-      // 2. High-speed 20B / Qwen fallback across key pool if 120B is throttled or busy
+      // 2. High-speed fallback models across key pool
       for (final currentApiKey in apiKeys) {
-        for (final fallbackModel in ['openai/gpt-oss-20b', 'qwen/qwen3.6-27b', 'groq/compound-mini']) {
+        for (final fallbackModel in ['qwen/qwen3.6-27b', 'groq/compound-mini', 'openai/gpt-oss-120b']) {
           try {
-            final fallbackResponse = await http.post(
-              Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
-              headers: {
-                'Authorization': 'Bearer $currentApiKey',
-                'Content-Type': 'application/json',
-              },
-              body: jsonEncode({
-                'model': fallbackModel,
-                'messages': messages,
-                'temperature': 0.7,
-                'response_format': {'type': 'json_object'},
-              }),
-            );
+            final fallbackResponse = await http
+                .post(
+                  Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+                  headers: {
+                    'Authorization': 'Bearer $currentApiKey',
+                    'Content-Type': 'application/json',
+                  },
+                  body: jsonEncode({
+                    'model': fallbackModel,
+                    'messages': messages,
+                    'temperature': 0.7,
+                    'max_tokens': 200,
+                    'response_format': {'type': 'json_object'},
+                  }),
+                )
+                .timeout(const Duration(seconds: 4));
 
             if (fallbackResponse.statusCode == 200) {
               final data = jsonDecode(fallbackResponse.body);

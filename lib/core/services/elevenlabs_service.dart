@@ -9,13 +9,17 @@ import '../../features/character/models/character_emotion.dart';
 /// ElevenLabs AI Voice Service featuring Spider-Man (Peter Parker) Voice with emotional modulation
 /// Supports Web, Android, and Desktop with dual fallback (ElevenLabs HD MP3 + Native TTS)
 class ElevenLabsService {
+  static final ElevenLabsService _instance = ElevenLabsService._internal();
+  factory ElevenLabsService() => _instance;
+
   final String apiKey;
   AudioPlayer? _audioPlayer;
   FlutterTts? _flutterTts;
-  
+  bool _isInitialized = false;
+
   // Antoni (Youthful, energetic Spider-Man / Peter Parker voice)
   static const String spiderManVoiceId = 'ErXwobaYiN019PkySvjV';
-  
+
   static String _resolveApiKey() {
     const envKey = String.fromEnvironment('ELEVENLABS_API_KEY', defaultValue: '');
     if (envKey.isNotEmpty) return envKey;
@@ -23,14 +27,23 @@ class ElevenLabsService {
     return ['sk_bac1226e7207', '9a86083d354f', '68921d739a1ec028a63e5bb6'].join();
   }
 
-  ElevenLabsService({String? apiKey}) : apiKey = apiKey ?? _resolveApiKey() {
+  ElevenLabsService._internal({String? apiKey}) : apiKey = apiKey ?? _resolveApiKey() {
+    _initAudio();
+  }
+
+  void _initAudio() {
+    if (_isInitialized) return;
     if (!kIsWeb) {
       try {
         _audioPlayer = AudioPlayer();
         _flutterTts = FlutterTts();
+        _audioPlayer?.setVolume(1.0);
+        _isInitialized = true;
       } catch (e) {
         debugPrint('Audio initialization warning: $e');
       }
+    } else {
+      _isInitialized = true;
     }
   }
 
@@ -72,21 +85,23 @@ class ElevenLabsService {
     // 1. Try ElevenLabs API HD Voice (Works on Web AND Android)
     try {
       final url = Uri.parse('https://api.elevenlabs.io/v1/text-to-speech/$spiderManVoiceId');
-      final response = await http.post(
-        url,
-        headers: {
-          'xi-api-key': apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'text': clean,
-          'model_id': 'eleven_turbo_v2_5',
-          'voice_settings': {
-            'stability': stability,
-            'similarity_boost': 0.8,
-          },
-        }),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'xi-api-key': apiKey,
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'text': clean,
+              'model_id': 'eleven_turbo_v2_5',
+              'voice_settings': {
+                'stability': stability,
+                'similarity_boost': 0.8,
+              },
+            }),
+          )
+          .timeout(const Duration(seconds: 4));
 
       if (response.statusCode == 200) {
         if (kIsWeb) {
@@ -100,6 +115,8 @@ class ElevenLabsService {
           await _audioPlayer!.stop();
           _audioPlayer!.onPlayerComplete.first.then((_) {
             onFinished?.call();
+          }).catchError((_) {
+            onFinished?.call();
           });
           await _audioPlayer!.play(BytesSource(response.bodyBytes));
           return;
@@ -108,7 +125,7 @@ class ElevenLabsService {
         debugPrint('ElevenLabs returned ${response.statusCode}: falling back to TTS voice');
       }
     } catch (e) {
-      debugPrint('ElevenLabs error: $e. Falling back to native Spider-Man TTS voice');
+      debugPrint('ElevenLabs network/timeout: $e. Falling back to native TTS');
     }
 
     // 2. Fallback: Emotion-tuned Spider-Man voice with pitch & rate modulation
@@ -121,6 +138,7 @@ class ElevenLabsService {
       try {
         _flutterTts ??= FlutterTts();
         await _flutterTts!.setLanguage("en-US");
+        await _flutterTts!.setVolume(1.0);
         await _flutterTts!.setPitch(1.25); // Youthful energetic Peter Parker pitch
         await _flutterTts!.setSpeechRate(0.52);
         _flutterTts!.setCompletionHandler(() {

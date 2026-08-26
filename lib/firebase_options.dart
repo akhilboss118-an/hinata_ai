@@ -29,8 +29,8 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyB1IQdRLXtU5iPSXRJK6aGaU0cmoOlOuSI',
-    appId: '1:769390720216:android:017d96366023738e4553ad',
+    apiKey: 'AIzaSyDyZL1OUpoGbjR-_pSPRz0AsCODZL_-5EM',
+    appId: '1:769390720216:android:75fa02ff6678b50c4553ad',
     messagingSenderId: '769390720216',
     projectId: 'hinata-ai-cecd3-b498a',
     storageBucket: 'hinata-ai-cecd3-b498a.firebasestorage.app',

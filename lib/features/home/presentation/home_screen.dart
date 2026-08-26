@@ -896,19 +896,17 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
       _finishAndDismiss();
     });
 
-    if (kIsWeb) {
-      ElevenLabsService().speakSpiderMan(
-        widget.text,
-        emotion: widget.emotion,
-        onFinished: () {
-          if (!mounted) return;
-          _dismissTimer?.cancel();
-          _dismissTimer = Timer(const Duration(milliseconds: 1400), () {
-            _finishAndDismiss();
-          });
-        },
-      );
-    }
+    ElevenLabsService().speakSpiderMan(
+      widget.text,
+      emotion: widget.emotion,
+      onFinished: () {
+        if (!mounted) return;
+        _dismissTimer?.cancel();
+        _dismissTimer = Timer(const Duration(milliseconds: 1400), () {
+          _finishAndDismiss();
+        });
+      },
+    );
   }
 
   void _finishAndDismiss() {
