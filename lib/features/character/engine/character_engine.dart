@@ -253,6 +253,23 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> with SingleTi
       });
     }
 
+    final modelWidget = ModelViewer(
+      key: ValueKey('${modelPath}_${suit.id}'),
+      src: modelPath,
+      alt: 'Spider-Man 3D Character',
+      ar: false,
+      autoRotate: false,
+      cameraControls: false,
+      disablePan: true,
+      disableZoom: true,
+      disableTap: true,
+      shadowIntensity: 1.0,
+      backgroundColor: Colors.transparent,
+      autoPlay: true,
+      cameraOrbit: '0deg 75deg auto',
+      fieldOfView: isAcrobatic ? '38deg' : '30deg',
+    );
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 20),
@@ -260,26 +277,13 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> with SingleTi
           duration: const Duration(milliseconds: 350),
           switchInCurve: Curves.easeIn,
           switchOutCurve: Curves.easeOut,
-          child: ColorFiltered(
-            key: ValueKey('${modelPath}_${suit.id}'),
-            colorFilter: ColorFilter.matrix(suit.colorMatrix),
-            child: ModelViewer(
-              key: ValueKey('${modelPath}_${suit.id}'),
-              src: modelPath,
-              alt: 'Spider-Man 3D Character',
-              ar: false,
-              autoRotate: false,
-              cameraControls: false,
-              disablePan: true,
-              disableZoom: true,
-              disableTap: true,
-              shadowIntensity: 1.0,
-              backgroundColor: Colors.transparent,
-              autoPlay: true,
-              cameraOrbit: '0deg 75deg auto',
-              fieldOfView: isAcrobatic ? '38deg' : '30deg',
-            ),
-          ),
+          child: (kIsWeb && suit.id != 'classic')
+              ? ColorFiltered(
+                  key: ValueKey('${modelPath}_${suit.id}'),
+                  colorFilter: ColorFilter.matrix(suit.colorMatrix),
+                  child: modelWidget,
+                )
+              : modelWidget,
         ),
       ),
     );

@@ -4,8 +4,11 @@
     <!-- Internet & Network State Permissions for Firebase, Google Sign-In & Gemini AI -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <!-- Audio recording for future Voice mode -->
+    <!-- Audio recording for Voice interaction -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Camera for Multimodal Vision (optional feature tag prevents hardware requirement lock) -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
 
     <application
         android:label="Hinata AI"

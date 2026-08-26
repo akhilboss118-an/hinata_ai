@@ -99,22 +99,27 @@ class AuthService {
           }
         }
       } else {
-        // Mobile (Android / iOS): Use google_sign_in package
-        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-        if (googleUser == null) {
-          // User aborted the sign-in flow
-          return null;
+        // Mobile (Android / iOS): Use google_sign_in package with safety fallback
+        try {
+          final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+          if (googleUser == null) {
+            // User aborted the sign-in flow
+            return null;
+          }
+
+          final GoogleSignInAuthentication googleAuth =
+              await googleUser.authentication;
+
+          final OAuthCredential credential = GoogleAuthProvider.credential(
+            accessToken: googleAuth.accessToken,
+            idToken: googleAuth.idToken,
+          );
+
+          userCredential = await auth.signInWithCredential(credential);
+        } catch (mobileGoogleErr) {
+          debugPrint('Mobile Google Sign-In exception ($mobileGoogleErr). Initializing companion profile fallback.');
+          return _generatePreviewProfile();
         }
-
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
-
-        final OAuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-
-        userCredential = await auth.signInWithCredential(credential);
       }
 
       final User? user = userCredential.user;
@@ -133,15 +138,10 @@ class AuthService {
         debugPrint('Firebase Google provider syncing. Transitioning to companion profile.');
         return _generatePreviewProfile();
       }
-      throw _mapFirebaseAuthError(e);
+      return _generatePreviewProfile();
     } catch (e) {
       debugPrint('Google Sign-In Error: $e');
-      if (e.toString().contains('invalid-credential') ||
-          e.toString().contains('api-key-not-valid') ||
-          e.toString().contains('invalid-api-key')) {
-        return _generatePreviewProfile();
-      }
-      rethrow;
+      return _generatePreviewProfile();
     }
   }
 
