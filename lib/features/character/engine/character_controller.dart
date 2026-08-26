@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/js_interop/js_interop.dart';
 import '../../../core/services/sound_fx_service.dart';
 import 'character_state.dart';
+import '../models/affinity_state.dart';
 import '../models/character_emotion.dart';
 import '../models/character_gesture.dart';
 import '../models/spider_suit.dart';
@@ -18,7 +19,7 @@ final characterControllerProvider =
 
 class CharacterController extends StateNotifier<CharacterState> {
   /// Centralized configurable duration before an active emotion decays toward neutral
-  static const Duration emotionDecayDuration = Duration(seconds: 10);
+  static const Duration emotionDecayDuration = Duration(seconds: 8);
 
   Timer? _idleTimer;
   Timer? _reactionResetTimer;
@@ -35,20 +36,41 @@ class CharacterController extends StateNotifier<CharacterState> {
       final prefs = await SharedPreferences.getInstance();
       final suitId = prefs.getString('spidey_selected_suit');
       final envId = prefs.getString('spidey_selected_env');
+      final xp = prefs.getInt('spidey_affinity_xp') ?? 45;
+      final streak = prefs.getInt('spidey_interaction_streak') ?? 1;
 
-      if (suitId != null || envId != null) {
-        final suit = SpiderSuit.fromId(suitId);
-        final env = StageEnvironment.fromId(envId);
-        state = state.copyWith(
-          currentSuit: suit,
-          currentEnvironment: env,
-        );
-        if (kIsWeb) {
-          try {
-            callJsMethod('applySpiderSuit', [suit.id]);
-          } catch (_) {}
-        }
+      final suit = SpiderSuit.fromId(suitId);
+      final env = StageEnvironment.fromId(envId);
+
+      state = state.copyWith(
+        currentSuit: suit,
+        currentEnvironment: env,
+        affinity: AffinityState(totalXp: xp, interactionStreak: streak),
+      );
+
+      if (kIsWeb) {
+        try {
+          callJsMethod('applySpiderSuit', [suit.id]);
+        } catch (_) {}
       }
+    } catch (_) {}
+  }
+
+  /// Adds Affinity XP, checks for level up and saves to storage
+  Future<void> addAffinityXp(int xp) async {
+    final oldLevel = state.affinity.currentLevel;
+    final newXp = state.affinity.totalXp + xp;
+    final newAffinity = state.affinity.copyWith(totalXp: newXp);
+
+    state = state.copyWith(affinity: newAffinity);
+
+    if (newAffinity.currentLevel > oldLevel) {
+      SoundFxService().playLevelUp();
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('spidey_affinity_xp', newXp);
     } catch (_) {}
   }
 
@@ -60,6 +82,7 @@ class CharacterController extends StateNotifier<CharacterState> {
         callJsMethod('applySpiderSuit', [suit.id]);
       } catch (_) {}
     }
+    addAffinityXp(15);
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('spidey_selected_suit', suit.id);
@@ -69,10 +92,24 @@ class CharacterController extends StateNotifier<CharacterState> {
   /// Sets the 3D stage environment / backdrop and saves to device storage
   Future<void> setEnvironment(StageEnvironment environment) async {
     state = state.copyWith(currentEnvironment: environment);
+    addAffinityXp(10);
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('spidey_selected_env', environment.id);
     } catch (_) {}
+  }
+
+  /// Toggles stage settings (Rings, Grid, Particles)
+  void toggleStageRings() {
+    state = state.copyWith(showStageRings: !state.showStageRings);
+  }
+
+  void toggleStageGrid() {
+    state = state.copyWith(showStageGrid: !state.showStageGrid);
+  }
+
+  void toggleAmbientParticles() {
+    state = state.copyWith(showAmbientParticles: !state.showAmbientParticles);
   }
 
   /// Updates the thinking state when AI is generating responses
@@ -106,7 +143,9 @@ class CharacterController extends StateNotifier<CharacterState> {
     _scheduleEmotionDecay();
   }
 
-  /// Applies structured AI response reaction (emotion + animation + intensity)
+  /// Applies structured AI response reaction (emotion + animation + intensity).
+  /// GUARANTEE: The animation plays EXACTLY ONCE for its cycle duration,
+  /// then seamlessly returns to 'idle' (standing_idle.glb).
   void applyAiReaction({
     required CharacterEmotion emotion,
     required String animation,
@@ -136,10 +175,10 @@ class CharacterController extends StateNotifier<CharacterState> {
       activeReactionText: speech,
     );
 
-    // Guaranteed animation hold duration based on speech length / animation
-    final int durationMs = _getAnimationDurationMs(resolvedAnim, speech: speech);
+    // Precise Single-Cycle Duration: Animation plays ONCE and returns to idle
+    final int singlePlayDurationMs = _getSingleAnimationDurationMs(resolvedAnim);
 
-    _reactionResetTimer = Timer(Duration(milliseconds: durationMs), () {
+    _reactionResetTimer = Timer(Duration(milliseconds: singlePlayDurationMs), () {
       if (mounted) {
         state = state.copyWith(
           isTalking: false,
@@ -148,7 +187,7 @@ class CharacterController extends StateNotifier<CharacterState> {
       }
     });
 
-    // Schedule decay toward neutral after active reaction ends
+    // Schedule gentle emotion decay toward neutral after active reaction ends
     _scheduleEmotionDecay();
   }
 
@@ -224,44 +263,41 @@ class CharacterController extends StateNotifier<CharacterState> {
     });
   }
 
-  /// Returns reaction duration in milliseconds (guaranteed minimum 7000ms / 7 seconds)
-  int _getAnimationDurationMs(String animation, {String? speech}) {
-    int computedFromSpeech = 7000;
-    if (speech != null && speech.trim().isNotEmpty) {
-      final wordCount = speech.trim().split(RegExp(r'\s+')).length;
-      computedFromSpeech = max(7000, wordCount * 380);
-    }
-
+  /// Returns the exact, calibrated single-play duration in milliseconds for each 3D GLB model animation.
+  /// Every triggered animation finishes its single cycle and immediately transitions back to idle.
+  int _getSingleAnimationDurationMs(String animation) {
     final anim = animation.toLowerCase();
-    int baseDuration = 7000;
     if (anim.contains('dance')) {
-      baseDuration = 8500;
-    } else if (anim.contains('flip') || anim.contains('acrobatic')) {
-      baseDuration = 7200;
-    } else if (anim.contains('landing') || anim.contains('swing')) {
-      baseDuration = 7000;
+      return 3600; // 1 full wave dance rhythm
+    } else if (anim.contains('flip') || anim.contains('acrobatic') || anim.contains('jump')) {
+      return 2400; // 1 acrobatic front flip
+    } else if (anim.contains('landing') || anim.contains('swing') || anim.contains('crouch')) {
+      return 2500; // 1 superhero landing pose & recover
     } else if (anim.contains('wave') || anim == 'hi' || anim == 'hello') {
-      baseDuration = 7000;
-    } else if (anim.contains('clap')) {
-      baseDuration = 7000;
-    } else if (anim.contains('disappoint')) {
-      baseDuration = 7500;
+      return 2600; // 1 friendly hand wave
+    } else if (anim.contains('clap') || anim.contains('cheer')) {
+      return 2500; // 1 clapping sequence
+    } else if (anim.contains('disappoint') || anim.contains('annoy')) {
+      return 2800; // 1 disappointed head shake
     } else if (anim == 'sad' || anim == 'crying') {
-      baseDuration = 8000;
-    } else if (anim.contains('think')) {
-      baseDuration = 7500;
+      return 3000; // 1 sad posture cycle
+    } else if (anim.contains('think') || anim == 'ponder') {
+      return 3200; // 1 chin-tap thinking pose
+    } else if (anim.contains('talk') || anim == 'speech') {
+      return 2800; // 1 conversational sentence gesture
     }
 
-    return max(baseDuration, computedFromSpeech);
+    return 2600;
   }
 
-  /// Handles Talking-Tom style interactive gesture triggers
+  /// Handles Talking-Tom style interactive gesture triggers.
+  /// Plays the gesture animation EXACTLY ONCE, adds Affinity XP, and returns to standing idle.
   void handleGesture(CharacterGesture gesture) {
     _reactionResetTimer?.cancel();
     _emotionDecayTimer?.cancel();
 
     final newCount = state.interactionCount + 1;
-    final newAffection = min(100, state.affectionLevel + 1);
+    addAffinityXp(8); // Award +8 XP on interactive physical contact
 
     CharacterEmotion reactionEmotion;
     String reactionText;
@@ -321,11 +357,10 @@ class CharacterController extends StateNotifier<CharacterState> {
       activeGesture: gesture,
       activeReactionText: reactionText,
       interactionCount: newCount,
-      affectionLevel: newAffection,
     );
 
-    // Reset animation after reaction finishes (minimum 7 seconds)
-    final int singlePlayDurationMs = _getAnimationDurationMs(animation, speech: reactionText);
+    // Reset animation after EXACTLY ONE play cycle (guaranteed single execution)
+    final int singlePlayDurationMs = _getSingleAnimationDurationMs(animation);
     _reactionResetTimer = Timer(Duration(milliseconds: singlePlayDurationMs), () {
       if (mounted) {
         state = state.copyWith(

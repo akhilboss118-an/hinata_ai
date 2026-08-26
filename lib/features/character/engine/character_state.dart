@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/affinity_state.dart';
 import '../models/character_emotion.dart';
 import '../models/character_gesture.dart';
 import '../models/spider_suit.dart';
@@ -17,8 +18,11 @@ class CharacterState {
   final bool isThinking;
   final CharacterGesture? activeGesture;
   final String? activeReactionText;
-  final int affectionLevel;
+  final AffinityState affinity;
   final int interactionCount;
+  final bool showStageRings;
+  final bool showStageGrid;
+  final bool showAmbientParticles;
 
   const CharacterState({
     this.currentEmotion = CharacterEmotion.neutral,
@@ -32,11 +36,15 @@ class CharacterState {
     this.isThinking = false,
     this.activeGesture,
     this.activeReactionText,
-    this.affectionLevel = 1,
+    this.affinity = const AffinityState(),
     this.interactionCount = 0,
+    this.showStageRings = true,
+    this.showStageGrid = true,
+    this.showAmbientParticles = true,
   });
 
   Color get currentAuraColor => currentEmotion.auraColor;
+  int get affectionLevel => affinity.currentLevel;
 
   CharacterState copyWith({
     CharacterEmotion? currentEmotion,
@@ -50,8 +58,11 @@ class CharacterState {
     bool? isThinking,
     CharacterGesture? activeGesture,
     String? activeReactionText,
-    int? affectionLevel,
+    AffinityState? affinity,
     int? interactionCount,
+    bool? showStageRings,
+    bool? showStageGrid,
+    bool? showAmbientParticles,
   }) {
     return CharacterState(
       currentEmotion: currentEmotion ?? this.currentEmotion,
@@ -65,8 +76,11 @@ class CharacterState {
       isThinking: isThinking ?? this.isThinking,
       activeGesture: activeGesture,
       activeReactionText: activeReactionText,
-      affectionLevel: affectionLevel ?? this.affectionLevel,
+      affinity: affinity ?? this.affinity,
       interactionCount: interactionCount ?? this.interactionCount,
+      showStageRings: showStageRings ?? this.showStageRings,
+      showStageGrid: showStageGrid ?? this.showStageGrid,
+      showAmbientParticles: showAmbientParticles ?? this.showAmbientParticles,
     );
   }
 }

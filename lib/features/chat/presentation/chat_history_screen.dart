@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_typography.dart';
@@ -161,6 +162,18 @@ class _ChatHistoryScreenState extends ConsumerState<ChatHistoryScreen> {
                                     ),
                                   ],
                                 ),
+                                if (msg.hasImage) ...[
+                                  const SizedBox(height: 8),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.memory(
+                                      base64Decode(msg.imageBase64!),
+                                      width: 160,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ],
                                 const SizedBox(height: 6),
                                 Text(
                                   msg.text,

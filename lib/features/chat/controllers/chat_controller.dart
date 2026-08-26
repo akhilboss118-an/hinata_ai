@@ -168,19 +168,27 @@ class ChatController extends StateNotifier<ChatState> {
     } catch (_) {}
   }
 
-  /// Sends a message, triggers AI generation, extracts memories, and persists history
+  /// Sends a message with optional Multimodal Image attachment (Camera / Gallery),
+  /// triggers AI generation, extracts memories, and persists history.
   Future<void> sendMessage({
     required String uid,
     required String text,
+    Uint8List? imageBytes,
+    String mimeType = 'image/jpeg',
   }) async {
-    if (text.trim().isEmpty) return;
+    if (text.trim().isEmpty && (imageBytes == null || imageBytes.isEmpty)) return;
 
     final now = DateTime.now();
+    final String? base64Img = (imageBytes != null && imageBytes.isNotEmpty)
+        ? base64Encode(imageBytes)
+        : null;
+
     final userMsg = ChatMessage(
       messageId: _uuid.v4(),
       sender: 'user',
-      text: text.trim(),
+      text: text.trim().isNotEmpty ? text.trim() : '📸 Sent a photo to inspect',
       timestamp: now,
+      imageBase64: base64Img,
     );
 
     // 1. Add user message to store & save
@@ -192,19 +200,24 @@ class ChatController extends StateNotifier<ChatState> {
     _persistMessages(uid);
     _charController.setThinking(true);
 
-    // 2. Automatic Memory Extraction from user input
-    try {
-      final newMemory = await _memoryRepository.autoExtractAndSaveMemory(
-        uid: uid,
-        text: text,
-      );
-      if (newMemory != null) {
-        _localMemories.insert(0, newMemory);
-        state = state.copyWith(memories: List.from(_localMemories));
-        debugPrint('Auto-extracted memory to vault: ${newMemory.content}');
+    // Award XP for interaction (+20 if photo included, +15 for text)
+    _charController.addAffinityXp(imageBytes != null ? 20 : 15);
+
+    // 2. Automatic Memory Extraction from user input (if text is substantial)
+    if (text.trim().isNotEmpty) {
+      try {
+        final newMemory = await _memoryRepository.autoExtractAndSaveMemory(
+          uid: uid,
+          text: text,
+        );
+        if (newMemory != null) {
+          _localMemories.insert(0, newMemory);
+          state = state.copyWith(memories: List.from(_localMemories));
+          debugPrint('Auto-extracted memory to vault: ${newMemory.content}');
+        }
+      } catch (e) {
+        debugPrint('Memory extraction notice: $e');
       }
-    } catch (e) {
-      debugPrint('Memory extraction notice: $e');
     }
 
     try {
@@ -240,9 +253,20 @@ class ChatController extends StateNotifier<ChatState> {
 
       final stopwatch = Stopwatch()..start();
 
-      // Request structured response from Groq AI (or Gemini AI)
+      // Request structured response from Gemini AI (with Multimodal Vision support) or Groq AI
       final GeminiCompanionResponse aiResponse;
-      if (_groqService.isConfigured) {
+      if (imageBytes != null && imageBytes.isNotEmpty) {
+        // Image attachment -> Always use Gemini Multimodal Vision
+        aiResponse = await _geminiService.generateCompanionResponse(
+          userMessage: text.trim().isNotEmpty ? text : 'Look at this picture!',
+          imageBytes: imageBytes,
+          mimeType: mimeType,
+          userName: heroName,
+          heroPersona: heroPersona,
+          recentHistory: recentHistory,
+          memories: memoryStrings,
+        );
+      } else if (_groqService.isConfigured) {
         aiResponse = await _groqService.generateCompanionResponse(
           userMessage: text,
           userName: heroName,
@@ -270,7 +294,7 @@ class ChatController extends StateNotifier<ChatState> {
       String targetAnimation = aiResponse.animation.isNotEmpty ? aiResponse.animation : 'talking';
       CharacterEmotion targetEmotion = aiResponse.emotion;
 
-      // Trigger 3D Character Reaction with emotion memory & decay
+      // Trigger 3D Character Reaction with emotion memory & decay (plays ONCE and returns to idle)
       _charController.applyAiReaction(
         emotion: targetEmotion,
         animation: targetAnimation,

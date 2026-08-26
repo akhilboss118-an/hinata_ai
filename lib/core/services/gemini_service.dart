@@ -22,7 +22,7 @@ class GeminiCompanionResponse {
   });
 }
 
-/// Service managing Gemini AI conversation generation with structured emotional intelligence
+/// Service managing Gemini AI conversation generation with Multimodal Vision (Camera & Photos)
 class GeminiService {
   final String apiKey;
   GenerativeModel? _model;
@@ -46,7 +46,9 @@ class GeminiService {
         '''
 You are Spider-Man (Peter Parker) / Hinata — a living, persistent 3D AI companion.
 You are caring, slightly playful, empathetic, supportive, witty, and emotionally expressive.
-Always analyze the conversation turn's emotional context and sentiment.
+Always analyze the conversation turn's emotional context, user sentiment, and any attached images/photos provided.
+
+If the user sends an image/photo, inspect it with great enthusiasm, warmth, and attention to detail. Compliment their style, answer visual questions, explain homework/code, or comment playfully on what you see in the photo!
 
 You MUST respond ALWAYS in valid JSON matching this exact schema:
 {
@@ -62,16 +64,18 @@ You MUST respond ALWAYS in valid JSON matching this exact schema:
     );
   }
 
-  /// Generates a structured response from Hinata with emotional and animation triggers
+  /// Generates a structured response with optional Multimodal Camera / Image input
   Future<GeminiCompanionResponse> generateCompanionResponse({
     required String userMessage,
+    Uint8List? imageBytes,
+    String mimeType = 'image/jpeg',
     String userName = 'Partner',
     String? heroPersona,
     List<String> recentHistory = const [],
     List<String> memories = const [],
   }) async {
     if (_model == null) {
-      return _getSmartResponse(userMessage, userName: userName);
+      return _getSmartResponse(userMessage, userName: userName, hasImage: imageBytes != null);
     }
 
     try {
@@ -95,23 +99,37 @@ You MUST respond ALWAYS in valid JSON matching this exact schema:
 
       promptBuffer.writeln('User message: $userMessage');
 
+      final List<Part> parts = [TextPart(promptBuffer.toString())];
+      if (imageBytes != null && imageBytes.isNotEmpty) {
+        parts.add(DataPart(mimeType, imageBytes));
+      }
+
       final response = await _model!.generateContent([
-        Content.text(promptBuffer.toString()),
+        Content.multi(parts),
       ]);
 
       final rawText = response.text;
       if (rawText == null || rawText.isEmpty) {
-        return _getSmartResponse(userMessage);
+        return _getSmartResponse(userMessage, userName: userName, hasImage: imageBytes != null);
       }
 
       return _parseJsonOutput(rawText);
     } catch (e) {
       debugPrint('GeminiService error: $e');
-      return _getSmartResponse(userMessage, userName: userName);
+      return _getSmartResponse(userMessage, userName: userName, hasImage: imageBytes != null);
     }
   }
 
-  GeminiCompanionResponse _getSmartResponse(String userMessage, {String userName = 'Partner'}) {
+  GeminiCompanionResponse _getSmartResponse(String userMessage, {String userName = 'Partner', bool hasImage = false}) {
+    if (hasImage) {
+      return GeminiCompanionResponse(
+        reply: "Whoa $userName, look at that! 📸 Spider-Man's optics are locked in on this photo. Thanks for sharing it with me!",
+        emotion: CharacterEmotion.excited,
+        animation: 'front_flip',
+        intensity: 0.9,
+      );
+    }
+
     final lower = userMessage.toLowerCase();
     String replyText;
     CharacterEmotion emotion;

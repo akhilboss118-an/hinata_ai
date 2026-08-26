@@ -1,6 +1,6 @@
 import '../../character/models/character_emotion.dart';
 
-/// Message entity stored in Firestore under /users/{uid}/conversations/{conversationId}/messages/{messageId}
+/// Message entity stored in Firestore and LocalStorage
 class ChatMessage {
   final String messageId;
   final String sender; // 'user' | 'hinata'
@@ -10,6 +10,7 @@ class ChatMessage {
   final String? animation;
   final double intensity;
   final String? audioUrl;
+  final String? imageBase64;
 
   const ChatMessage({
     required this.messageId,
@@ -20,10 +21,12 @@ class ChatMessage {
     this.animation,
     this.intensity = 0.5,
     this.audioUrl,
+    this.imageBase64,
   });
 
   bool get isUser => sender == 'user';
   bool get isHinata => sender == 'hinata';
+  bool get hasImage => imageBase64 != null && imageBase64!.isNotEmpty;
 
   Map<String, dynamic> toMap() {
     return {
@@ -35,6 +38,7 @@ class ChatMessage {
       'animation': animation,
       'intensity': intensity,
       'audioUrl': audioUrl,
+      'imageBase64': imageBase64,
     };
   }
 
@@ -50,6 +54,7 @@ class ChatMessage {
       animation: map['animation'] as String?,
       intensity: (map['intensity'] as num?)?.toDouble() ?? 0.5,
       audioUrl: map['audioUrl'] as String?,
+      imageBase64: map['imageBase64'] as String?,
     );
   }
 }

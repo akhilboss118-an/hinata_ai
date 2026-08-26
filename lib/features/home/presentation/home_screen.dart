@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:hinata_ai/app/theme/app_colors.dart';
 import 'package:hinata_ai/core/services/elevenlabs_service.dart';
@@ -17,9 +18,10 @@ import 'package:hinata_ai/features/chat/controllers/chat_controller.dart';
 import 'package:hinata_ai/features/auth/controllers/auth_controller.dart';
 import 'package:hinata_ai/features/auth/controllers/auth_state.dart';
 import 'widgets/side_menu_drawer.dart';
+import 'widgets/bond_level_chip.dart';
 
-/// Stitch Homepage: transparent top bar, full-screen character stage with
-/// ethereal rings, and the glass-panel chat bar with integrated voice input.
+/// Full-Screen AI Companion Home Screen with Single-Cycle Animations,
+/// Multimodal Camera & Vision Input, Bond Progression HUD, and Glass Chat Interface
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -34,11 +36,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _hasText = false;
   bool _isListening = false;
 
+  Uint8List? _selectedImageBytes;
+
   @override
   void initState() {
     super.initState();
     _textController.addListener(() {
-      final has = _textController.text.trim().isNotEmpty;
+      final has = _textController.text.trim().isNotEmpty || _selectedImageBytes != null;
       if (has != _hasText) setState(() => _hasText = has);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -67,18 +71,187 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _selectedImageBytes = bytes;
+          _hasText = true;
+        });
+        SoundFxService().playTapChime();
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+  }
+
+  void _showImageSourcePicker() {
+    SoundFxService().playTapChime();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.96),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              border: Border.all(color: const Color(0xFF64D5F4).withValues(alpha: 0.35)),
+            ),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Multimodal Vision & Camera 👁️',
+                    style: GoogleFonts.inter(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Let Spider-Man inspect your photo with Gemini AI vision',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: const Color(0xFF85BAE3),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildVisionSourceTile(
+                        icon: Icons.camera_alt_rounded,
+                        title: 'Snap Photo',
+                        subtitle: 'Use Camera',
+                        color: const Color(0xFF64D5F4),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _pickImage(ImageSource.camera);
+                        },
+                      ),
+                      _buildVisionSourceTile(
+                        icon: Icons.photo_library_rounded,
+                        title: 'Photo Library',
+                        subtitle: 'Upload Gallery',
+                        color: const Color(0xFF818CF8),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _pickImage(ImageSource.gallery);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVisionSourceTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: 140,
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF162338),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.4), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.15),
+              blurRadius: 12,
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: 0.15),
+                border: Border.all(color: color, width: 1.5),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color: const Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _sendMessage() {
     final text = _textController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _selectedImageBytes == null) return;
 
     SoundFxService().playThwip();
 
     final uid = _getUid();
+    final imgBytes = _selectedImageBytes;
 
     _textController.clear();
+    setState(() {
+      _selectedImageBytes = null;
+      _hasText = false;
+    });
     _focusNode.unfocus();
 
-    ref.read(chatControllerProvider.notifier).sendMessage(uid: uid, text: text);
+    ref.read(chatControllerProvider.notifier).sendMessage(
+      uid: uid,
+      text: text,
+      imageBytes: imgBytes,
+    );
   }
 
   @override
@@ -104,6 +277,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   _buildTopBar(context),
                   const Spacer(),
+
+                  // Attached Image Preview Thumbnail Chip
+                  if (_selectedImageBytes != null) _buildImagePreviewChip(),
 
                   // 3D Speech Reaction Subtitle Pill (auto-fading)
                   if (characterState.activeReactionText != null &&
@@ -146,53 +322,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
             ),
 
-            // ─── POLISHED ANIMATED EMOTION / MOOD INDICATOR ───
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 450),
-              curve: Curves.easeInOut,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              decoration: BoxDecoration(
-                color: const Color(0xFF101622).withValues(alpha: 0.88),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: characterState.currentEmotion.color.withValues(alpha: 0.45),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: characterState.currentEmotion.color.withValues(alpha: 0.20),
-                    blurRadius: 12,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 350),
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(scale: animation, child: child),
-                ),
-                child: Row(
-                  key: ValueKey(characterState.currentEmotion),
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      characterState.currentEmotion.emoji,
-                      style: const TextStyle(fontSize: 14),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ─── BOND LEVEL HUD CHIP ───
+                BondLevelChip(affinity: characterState.affinity),
+
+                const SizedBox(width: 8),
+
+                // ─── POLISHED ANIMATED EMOTION / MOOD INDICATOR ───
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 450),
+                  curve: Curves.easeInOut,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF101622).withValues(alpha: 0.88),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: characterState.currentEmotion.color.withValues(alpha: 0.45),
+                      width: 1,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Mood: ${characterState.currentEmotion.label.toUpperCase()}',
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: characterState.currentEmotion.color,
-                        letterSpacing: 0.5,
+                    boxShadow: [
+                      BoxShadow(
+                        color: characterState.currentEmotion.color.withValues(alpha: 0.20),
+                        blurRadius: 12,
+                        spreadRadius: 1,
                       ),
+                    ],
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 350),
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(scale: animation, child: child),
                     ),
-                  ],
+                    child: Row(
+                      key: ValueKey(characterState.currentEmotion),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          characterState.currentEmotion.emoji,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          characterState.currentEmotion.label.toUpperCase(),
+                          style: GoogleFonts.jetBrainsMono(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: characterState.currentEmotion.color,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
         ),
@@ -230,6 +416,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               letterSpacing: 0.5,
               color: AppColors.primaryLight,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ──────────────────────── IMAGE PREVIEW CHIP ─────────────────────────
+
+  Widget _buildImagePreviewChip() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF101622).withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF64D5F4), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF64D5F4).withValues(alpha: 0.25),
+            blurRadius: 12,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.memory(
+              _selectedImageBytes!,
+              width: 36,
+              height: 36,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Photo Attached 📸',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                'Gemini Vision Active',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  color: const Color(0xFF64D5F4),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.cancel_rounded, size: 18, color: Colors.white70),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () {
+              setState(() {
+                _selectedImageBytes = null;
+                _hasText = _textController.text.trim().isNotEmpty;
+              });
+            },
           ),
         ],
       ),
@@ -334,10 +588,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   child: Row(
                     children: [
-                      // Voice Input Mic Button (Stitch Theme)
+                      // Voice Input Mic Button
                       _buildVoiceButton(),
 
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
+
+                      // Camera / Vision Button
+                      _buildCameraButton(),
+
+                      const SizedBox(width: 8),
 
                       // Input text field
                       Expanded(
@@ -346,16 +605,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           focusNode: _focusNode,
                           cursorColor: const Color(0xFF85BAE3),
                           style: GoogleFonts.inter(
-                            fontSize: 16,
+                            fontSize: 15,
                             height: 1.4,
                             color: Colors.white,
                           ),
                           decoration: InputDecoration(
                             hintText: _isListening
                                 ? 'Listening... Speak now 🎙️'
-                                : 'Talk to Spider-Man...',
+                                : (_selectedImageBytes != null
+                                    ? 'Ask about this photo... 👁️'
+                                    : 'Talk to Spider-Man...'),
                             hintStyle: GoogleFonts.inter(
-                              fontSize: 15,
+                              fontSize: 14,
                               color: _isListening
                                   ? const Color(0xFF85BAE3)
                                   : const Color(0xFF758394),
@@ -419,7 +680,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Small responsive microphone button with pulse animations for voice input
+  /// Responsive microphone button with pulse animations for voice input
   Widget _buildVoiceButton() {
     return Material(
       color: Colors.transparent,
@@ -429,8 +690,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onTap: _toggleVoiceInput,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
-          width: 42,
-          height: 42,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: _isListening
@@ -455,10 +716,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Center(
             child: Icon(
               _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-              size: 21,
-              color: _isListening
-                  ? const Color(0xFF64D5F4)
-                  : const Color(0xFF85BAE3),
+              color: _isListening ? const Color(0xFF64D5F4) : const Color(0xFF85BAE3),
+              size: 20,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Camera / Multimodal vision attachment trigger button
+  Widget _buildCameraButton() {
+    final bool hasImage = _selectedImageBytes != null;
+
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: _showImageSourcePicker,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: hasImage ? const Color(0xFF004B6E) : const Color(0xFF182230),
+            border: Border.all(
+              color: hasImage ? const Color(0xFF64D5F4) : const Color(0xFF2B3A4E),
+              width: hasImage ? 1.8 : 1,
+            ),
+            boxShadow: hasImage
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF64D5F4).withValues(alpha: 0.4),
+                      blurRadius: 10,
+                    ),
+                  ]
+                : [],
+          ),
+          child: Center(
+            child: Icon(
+              Icons.camera_alt_rounded,
+              color: hasImage ? const Color(0xFF64D5F4) : const Color(0xFF85BAE3),
+              size: 19,
             ),
           ),
         ),
@@ -467,7 +768,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// ──────────────────────── TYPEWRITER ANIMATION WIDGET ─────────────────────
+// ──────────────────────── TYPEWRITER SUBTITLE EFFECT ────────────────────────
 
 class _TypewriterText extends StatefulWidget {
   final String text;
@@ -589,9 +890,8 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
   void _playVoiceAndSchedule() {
     _dismissTimer?.cancel();
 
-    // Safe fallback duration in case audio is muted or blocked
     final int len = widget.text.length;
-    final int fallbackDelayMs = (6000 + (len * 80)).clamp(6000, 20000);
+    final int fallbackDelayMs = (4000 + (len * 60)).clamp(4000, 15000);
     _dismissTimer = Timer(Duration(milliseconds: fallbackDelayMs), () {
       _finishAndDismiss();
     });
@@ -603,8 +903,7 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
         onFinished: () {
           if (!mounted) return;
           _dismissTimer?.cancel();
-          // Dialogue audio completed: keep visible for 1.8s buffer then fade out
-          _dismissTimer = Timer(const Duration(milliseconds: 1800), () {
+          _dismissTimer = Timer(const Duration(milliseconds: 1400), () {
             _finishAndDismiss();
           });
         },

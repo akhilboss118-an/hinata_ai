@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +10,8 @@ import '../models/character_gesture.dart';
 import 'character_controller.dart';
 import 'character_state.dart';
 
-/// Full-Screen Character Viewport & Talking-Tom Touch Gesture Handler
+/// Full-Screen Character Viewport with Precision Single-Cycle Animations,
+/// Dynamic Atmospheric Backdrops, and Interactive Touch Feedback
 class CharacterEngine extends ConsumerStatefulWidget {
   final VoidCallback? onCharacterTap;
   final bool isInteractive;
@@ -24,8 +26,35 @@ class CharacterEngine extends ConsumerStatefulWidget {
   ConsumerState<CharacterEngine> createState() => _CharacterEngineState();
 }
 
-class _CharacterEngineState extends ConsumerState<CharacterEngine> {
+class _CharacterEngineState extends ConsumerState<CharacterEngine> with SingleTickerProviderStateMixin {
   bool isIdle = true;
+  final List<_TouchParticle> _activeParticles = [];
+
+  void _spawnTouchFeedback(Offset position, {bool isHeart = false}) {
+    final random = Random();
+    for (int i = 0; i < (isHeart ? 4 : 3); i++) {
+      final angle = random.nextDouble() * 2 * pi;
+      final speed = 40.0 + random.nextDouble() * 50.0;
+      final particle = _TouchParticle(
+        id: DateTime.now().microsecondsSinceEpoch + i,
+        startPos: position,
+        vx: cos(angle) * speed,
+        vy: sin(angle) * speed - 30.0,
+        isHeart: isHeart,
+        color: isHeart ? const Color(0xFFFF2A55) : const Color(0xFF64D5F4),
+      );
+      _activeParticles.add(particle);
+    }
+    if (mounted) setState(() {});
+
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (mounted) {
+        setState(() {
+          _activeParticles.removeWhere((p) => DateTime.now().difference(p.createdAt).inMilliseconds > 650);
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +93,7 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Subtle Dynamic Radial Gradient Background reacting to Environment, Suit & Emotion
+            // Dynamic Multi-Layer Radial Gradient Background reacting to Environment, Suit & Emotion
             Positioned.fill(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 600),
@@ -72,10 +101,12 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     center: const Alignment(0, -0.1),
-                    radius: 1.25,
+                    radius: 1.30,
                     colors: [
-                      Color.lerp(env.gradientColors[0], auraColor, 0.25)!.withValues(alpha: 0.55),
-                      Color.lerp(env.gradientColors[1], suit.glowColor, 0.15)!.withValues(alpha: 0.70),
+                      Color.lerp(env.gradientColors[0], auraColor, 0.25)!
+                          .withValues(alpha: 0.60 * env.ambientIntensity),
+                      Color.lerp(env.gradientColors[1], suit.glowColor, 0.20)!
+                          .withValues(alpha: 0.75 * env.ambientIntensity),
                       env.gradientColors[2].withValues(alpha: 0.95),
                       AppColors.backgroundDeep,
                     ],
@@ -84,29 +115,52 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
               ),
             ),
 
+            // Optional Stage Cyber Grid
+            if (characterState.showStageGrid)
+              Positioned.fill(
+                child: Opacity(
+                  opacity: 0.08,
+                  child: CustomPaint(
+                    painter: _CyberGridPainter(gridColor: env.ringColor),
+                  ),
+                ),
+              ),
+
             // Decorative Dynamic Ethereal Rings reacting to Environment, Suit & Emotion
-            _EtherealRing(
-              diameter: _clampWidth(constraints.maxWidth, 0.95, 450),
-              liftFactor: 0.10,
-              borderColor: Color.lerp(env.ringColor, auraColor, 0.35)!.withValues(alpha: 0.16),
-            ),
-            _EtherealRing(
-              diameter: _clampWidth(constraints.maxWidth, 0.85, 400),
-              liftFactor: 0.10,
-              borderColor: Color.lerp(suit.glowColor, auraColor, 0.35)!.withValues(alpha: 0.28),
-            ),
+            if (characterState.showStageRings) ...[
+              _EtherealRing(
+                diameter: _clampWidth(constraints.maxWidth, 0.95, 460),
+                liftFactor: 0.10,
+                borderColor: Color.lerp(env.ringColor, auraColor, 0.35)!.withValues(alpha: 0.18),
+              ),
+              _EtherealRing(
+                diameter: _clampWidth(constraints.maxWidth, 0.85, 410),
+                liftFactor: 0.10,
+                borderColor: Color.lerp(suit.glowColor, auraColor, 0.35)!.withValues(alpha: 0.30),
+              ),
+            ],
 
             // Dynamic 3D Character Stage wrapped in AnimatedAlign based on animation state
             Positioned.fill(
               child: AnimatedAlign(
-                duration: const Duration(milliseconds: 600),
+                duration: const Duration(milliseconds: 550),
                 curve: Curves.easeInOutCubic,
                 alignment: stageAlignment,
                 child: _buildModelStage(characterState),
               ),
             ),
 
-            // Transparent full-screen touch layer (Talking-Tom style hitboxes)
+            // Interactive Touch Particle Feedback Overlay
+            if (_activeParticles.isNotEmpty)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _ParticlesPainter(particles: _activeParticles),
+                  ),
+                ),
+              ),
+
+            // Transparent full-screen touch layer (Talking-Tom style hitboxes with XP & Single-Play Animations)
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
@@ -115,24 +169,29 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
                   final relativeY = details.localPosition.dy / constraints.maxHeight;
 
                   if (relativeY < 0.4) {
-                    // Head Pat
+                    // Head Pat (Friendly Heart Chime)
+                    _spawnTouchFeedback(details.localPosition, isHeart: true);
                     characterController.handleGesture(CharacterGesture.headPat);
                   } else if (relativeY < 0.6) {
                     // Cheek / Face Poke
+                    _spawnTouchFeedback(details.localPosition, isHeart: false);
                     characterController.handleGesture(CharacterGesture.cheekPoke);
                   } else {
                     // General tickle / poke
+                    _spawnTouchFeedback(details.localPosition, isHeart: false);
                     characterController.handleGesture(CharacterGesture.tickle);
                   }
                   widget.onCharacterTap?.call();
                 },
-                onDoubleTap: () {
+                onDoubleTapDown: (details) {
                   if (widget.isInteractive) {
+                    _spawnTouchFeedback(details.localPosition, isHeart: true);
                     characterController.handleGesture(CharacterGesture.cheekPoke);
                   }
                 },
-                onLongPress: () {
+                onLongPressStart: (details) {
                   if (widget.isInteractive) {
+                    _spawnTouchFeedback(details.localPosition, isHeart: true);
                     characterController.handleGesture(CharacterGesture.hold);
                   }
                 },
@@ -198,7 +257,7 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
       child: Padding(
         padding: const EdgeInsets.only(bottom: 20),
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 400),
+          duration: const Duration(milliseconds: 350),
           switchInCurve: Curves.easeIn,
           switchOutCurve: Curves.easeOut,
           child: ColorFiltered(
@@ -227,7 +286,7 @@ class _CharacterEngineState extends ConsumerState<CharacterEngine> {
   }
 }
 
-/// Decorative dynamic halo ring behind the character (Stitch ethereal rings)
+/// Dynamic decorative halo ring behind the character
 class _EtherealRing extends StatelessWidget {
   final double diameter;
   final double liftFactor;
@@ -251,10 +310,96 @@ class _EtherealRing extends StatelessWidget {
           height: diameter,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: borderColor, width: 0.8),
+            border: Border.all(color: borderColor, width: 0.9),
           ),
         ),
       ),
     );
   }
+}
+
+/// Cyber grid floor painter
+class _CyberGridPainter extends CustomPainter {
+  final Color gridColor;
+  _CyberGridPainter({required this.gridColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = gridColor
+      ..strokeWidth = 0.5;
+
+    const spacing = 40.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CyberGridPainter oldDelegate) =>
+      oldDelegate.gridColor != gridColor;
+}
+
+/// Interactive Touch Particles
+class _TouchParticle {
+  final int id;
+  final Offset startPos;
+  final double vx;
+  final double vy;
+  final bool isHeart;
+  final Color color;
+  final DateTime createdAt = DateTime.now();
+
+  _TouchParticle({
+    required this.id,
+    required this.startPos,
+    required this.vx,
+    required this.vy,
+    required this.isHeart,
+    required this.color,
+  });
+}
+
+class _ParticlesPainter extends CustomPainter {
+  final List<_TouchParticle> particles;
+  _ParticlesPainter({required this.particles});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final now = DateTime.now();
+    for (final p in particles) {
+      final elapsed = now.difference(p.createdAt).inMilliseconds / 600.0;
+      if (elapsed > 1.0) continue;
+
+      final currentPos = Offset(
+        p.startPos.dx + (p.vx * elapsed),
+        p.startPos.dy + (p.vy * elapsed),
+      );
+      final alpha = (1.0 - elapsed).clamp(0.0, 1.0);
+
+      final paint = Paint()
+        ..color = p.color.withValues(alpha: alpha)
+        ..style = PaintingStyle.fill;
+
+      if (p.isHeart) {
+        // Draw miniature heart
+        final path = Path();
+        final x = currentPos.dx;
+        final y = currentPos.dy;
+        final s = 7.0 * (1.0 + (0.3 * elapsed));
+        path.moveTo(x, y);
+        path.cubicTo(x - s, y - s, x - (s * 1.6), y + (s * 0.4), x, y + (s * 1.4));
+        path.cubicTo(x + (s * 1.6), y + (s * 0.4), x + s, y - s, x, y);
+        canvas.drawPath(path, paint);
+      } else {
+        canvas.drawCircle(currentPos, 4.0 * (1.0 - (0.5 * elapsed)), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ParticlesPainter oldDelegate) => true;
 }

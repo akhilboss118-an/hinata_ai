@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../app/theme/app_colors.dart';
@@ -6,7 +7,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../models/chat_message.dart';
 
-/// Message Bubble supporting Hinata and User styles
+/// Message Bubble supporting Hinata and User styles with Multimodal image rendering
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
 
@@ -69,6 +70,17 @@ class MessageBubble extends StatelessWidget {
                     isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (message.hasImage) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.memory(
+                        base64Decode(message.imageBase64!),
+                        width: 200,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   Text(
                     message.text,
                     style: AppTypography.bodyMedium.copyWith(
