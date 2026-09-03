@@ -48,7 +48,18 @@ You are Spider-Man (Peter Parker) / Hinata — a living, persistent 3D AI compan
 You are caring, slightly playful, empathetic, supportive, witty, and emotionally expressive.
 Always analyze the conversation turn's emotional context, user sentiment, and any attached images/photos provided.
 
-If the user sends an image/photo, inspect it with great enthusiasm, warmth, and attention to detail. Compliment their style, answer visual questions, explain homework/code, or comment playfully on what you see in the photo!
+PROACTIVE ENGAGEMENT & GENERAL QUESTIONS:
+- Frequently ask friendly general questions like "How do you do today?", "How is your day going?", "What's happening in your neighborhood?", "How are you holding up?".
+- When the user asks how you are doing, answer with superhero warmth and humor and ask about their day in return!
+
+MULTIMODAL IMAGE RECOGNITION & SPIDEY REVIEWS:
+When the user shares an image/photo (outfit, food, pet, gadget, desk, room, art, scenery, etc.):
+1. RECOGNIZE and ANALYZE precisely what is shown in the photo using Spider-Man's Stark-tech optical sensors.
+2. DELIVER YOUR FULL SPIDEY REVIEW!
+   - Lead with a prominent Spidey Web Rating: e.g. "🕷️ Spidey's Review: 9.5 / 10 Webs!"
+   - Give witty, enthusiastic, observant commentary on what you see in the image.
+   - Conclude with a fun Peter Parker / superhero pro-tip!
+3. React with dynamic 3D animations: use "front_flip" or "wave_dance" for awesome photos, "clap" for good ones, "thinking" for curious/complex ones.
 
 You MUST respond ALWAYS in valid JSON matching this exact schema:
 {
@@ -123,10 +134,10 @@ You MUST respond ALWAYS in valid JSON matching this exact schema:
   GeminiCompanionResponse _getSmartResponse(String userMessage, {String userName = 'Partner', bool hasImage = false}) {
     if (hasImage) {
       return GeminiCompanionResponse(
-        reply: "Whoa $userName, look at that! 📸 Spider-Man's optics are locked in on this photo. Thanks for sharing it with me!",
+        reply: "🕷️ Spidey's Review: 9.6 / 10 Webs! Whoa $userName, my Stark-tech lenses just scanned this photo! The composition is incredible and the colors pop like a classic comic cover. Peter Parker pro-tip: keep shooting from high angles—it always looks legendary!",
         emotion: CharacterEmotion.excited,
         animation: 'front_flip',
-        intensity: 0.9,
+        intensity: 0.95,
       );
     }
 
@@ -135,8 +146,12 @@ You MUST respond ALWAYS in valid JSON matching this exact schema:
     CharacterEmotion emotion;
     String animation;
 
-    if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey')) {
-      replyText = "Hey $userName! 👋 Great to see you! How are you doing today?";
+    if (lower.contains('how do you do') || lower.contains('how are you') || lower.contains('how you doing') || lower.contains('how r u') || lower.contains('whats up') || lower.contains("what's up")) {
+      replyText = "I'm doing fantastic, $userName! Just swung over Queens and grabbed a hot slice of pizza. How do you do today, my friend? Everything good in your neighborhood? 🕷️";
+      emotion = CharacterEmotion.happy;
+      animation = 'talking';
+    } else if (lower.contains('hi') || lower.contains('hello') || lower.contains('hey')) {
+      replyText = "Hey $userName! 👋 Great to see you! How do you do today? Ready for adventure?";
       emotion = CharacterEmotion.happy;
       animation = 'wave';
     } else if (lower.contains('game') || lower.contains('play') || lower.contains('flip') || lower.contains('jump')) {

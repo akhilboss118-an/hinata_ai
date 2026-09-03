@@ -38,6 +38,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Uint8List? _selectedImageBytes;
 
+  Timer? _idleTimer;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +49,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureConversation();
+      _triggerInitialGreeting();
+      _resetIdleTimer();
+    });
+  }
+
+  void _triggerInitialGreeting() {
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (!mounted) return;
+      final charState = ref.read(characterControllerProvider);
+      if (charState.activeReactionText == null || charState.activeReactionText!.isEmpty) {
+        ref.read(characterControllerProvider.notifier).applyAiReaction(
+          emotion: CharacterEmotion.happy,
+          animation: 'wave',
+          intensity: 0.9,
+          speech: "Hey partner! Spidey here. How do you do today? Everything quiet in your neighborhood?",
+        );
+      }
+    });
+  }
+
+  void _resetIdleTimer() {
+    _idleTimer?.cancel();
+    _idleTimer = Timer(const Duration(seconds: 28), () {
+      if (!mounted) return;
+      final charState = ref.read(characterControllerProvider);
+      if (charState.isTalking || charState.isThinking || (charState.activeReactionText != null && charState.activeReactionText!.isNotEmpty)) {
+        return;
+      }
+      final questions = [
+        "How do you do today, web-slinger? Still hanging in there?",
+        "Quick check-in! Have you stayed hydrated and eaten today?",
+        "On a scale of 1 to 10 webs, how high is your energy today?",
+        "Faced any supervillains today, or just regular everyday life?",
+        "What's the best thing that happened to you today?",
+      ];
+      final q = questions[DateTime.now().second % questions.length];
+      ref.read(characterControllerProvider.notifier).applyAiReaction(
+        emotion: CharacterEmotion.happy,
+        animation: 'talking',
+        intensity: 0.85,
+        speech: q,
+      );
     });
   }
 
@@ -66,6 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    _idleTimer?.cancel();
     _textController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -132,7 +177,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Let Spider-Man inspect your photo with Gemini AI vision',
+                    'Let Spider-Man analyze your photo and give his Spidey review!',
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: const Color(0xFF85BAE3),
@@ -232,13 +277,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _sendMessage() {
-    final text = _textController.text.trim();
+    String text = _textController.text.trim();
     if (text.isEmpty && _selectedImageBytes == null) return;
 
+    _resetIdleTimer();
     SoundFxService().playThwip();
 
     final uid = _getUid();
     final imgBytes = _selectedImageBytes;
+
+    // If sending an image with empty text, request a full Spidey review
+    if (imgBytes != null && text.isEmpty) {
+      text = 'Spider-Man, please analyze this image and tell me your full Spidey review and rating!';
+    }
 
     _textController.clear();
     setState(() {
@@ -291,6 +342,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                   // Thinking pill
                   if (characterState.isThinking) _buildThinkingPill(),
+
+                  // Quick General Question & Action Suggestion Chips
+                  _buildQuickSuggestionChips(),
 
                   // Glass Chat Input Bar
                   _buildBottomInteractionArea(),
@@ -544,6 +598,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ──────────────────── BOTTOM GLASS CHAT PANEL ──────────────────────
+
+  Widget _buildQuickSuggestionChips() {
+    final chips = [
+      'How do you do, Spidey? 🕷️',
+      'I\'m doing great! 🚀',
+      'Pretty tired today 😴',
+      'Review my photo! 📸',
+      'Tell me a joke! 😂',
+      'Show me a flip! 🤸',
+    ];
+
+    return Container(
+      height: 36,
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        scrollDirection: Axis.horizontal,
+        itemCount: chips.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final chip = chips[index];
+          final isPhoto = chip.contains('Review my photo');
+          return InkWell(
+            onTap: () {
+              _resetIdleTimer();
+              if (isPhoto) {
+                _showImageSourcePicker();
+              } else {
+                _textController.text = chip;
+                _sendMessage();
+              }
+            },
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF101622).withValues(alpha: 0.88),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: isPhoto
+                      ? const Color(0xFF64D5F4).withValues(alpha: 0.5)
+                      : Colors.white.withValues(alpha: 0.14),
+                  width: isPhoto ? 1.2 : 1,
+                ),
+                boxShadow: isPhoto
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF64D5F4).withValues(alpha: 0.2),
+                          blurRadius: 8,
+                        )
+                      ]
+                    : [],
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                chip,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: isPhoto ? const Color(0xFF64D5F4) : Colors.white.withValues(alpha: 0.9),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   Widget _buildBottomInteractionArea() {
     final focused = _focusNode.hasFocus;
@@ -857,10 +979,13 @@ class _FadingSubtitleBubble extends StatefulWidget {
   State<_FadingSubtitleBubble> createState() => _FadingSubtitleBubbleState();
 }
 
-class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with SingleTickerProviderStateMixin {
+class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _opacityAnimation;
+  late AnimationController _progressController;
   Timer? _dismissTimer;
+  static const int _kCaptionDurationMs = 8000; // 8 seconds display guarantee as requested
+  DateTime? _bubbleStartTime;
 
   @override
   void initState() {
@@ -872,6 +997,11 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
     _opacityAnimation = CurvedAnimation(
       parent: _fadeController,
       curve: Curves.easeInOut,
+    );
+
+    _progressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: _kCaptionDurationMs),
     );
 
     _fadeController.forward();
@@ -889,10 +1019,13 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
 
   void _playVoiceAndSchedule() {
     _dismissTimer?.cancel();
+    _bubbleStartTime = DateTime.now();
 
-    final int len = widget.text.length;
-    final int fallbackDelayMs = (4000 + (len * 60)).clamp(4000, 15000);
-    _dismissTimer = Timer(Duration(milliseconds: fallbackDelayMs), () {
+    _progressController.reset();
+    _progressController.forward();
+
+    // Default guarantee: Captions visible for 8 seconds
+    _dismissTimer = Timer(const Duration(milliseconds: _kCaptionDurationMs), () {
       _finishAndDismiss();
     });
 
@@ -901,10 +1034,23 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
       emotion: widget.emotion,
       onFinished: () {
         if (!mounted) return;
-        _dismissTimer?.cancel();
-        _dismissTimer = Timer(const Duration(milliseconds: 1400), () {
-          _finishAndDismiss();
-        });
+        final elapsedMs = _bubbleStartTime != null
+            ? DateTime.now().difference(_bubbleStartTime!).inMilliseconds
+            : 0;
+        final remainingMs = _kCaptionDurationMs - elapsedMs;
+        if (remainingMs > 0) {
+          // Audio finished early; wait until full 8 seconds have elapsed!
+          _dismissTimer?.cancel();
+          _dismissTimer = Timer(Duration(milliseconds: remainingMs), () {
+            _finishAndDismiss();
+          });
+        } else {
+          // Audio exceeded 8 seconds; keep visible for an extra 1500ms reading buffer
+          _dismissTimer?.cancel();
+          _dismissTimer = Timer(const Duration(milliseconds: 1500), () {
+            _finishAndDismiss();
+          });
+        }
       },
     );
   }
@@ -920,6 +1066,7 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
   @override
   void dispose() {
     _dismissTimer?.cancel();
+    _progressController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
@@ -930,49 +1077,102 @@ class _FadingSubtitleBubbleState extends State<_FadingSubtitleBubble> with Singl
       opacity: _opacityAnimation,
       child: Container(
         margin: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.82),
+          color: Colors.black.withValues(alpha: 0.86),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppColors.primaryLight.withValues(alpha: 0.40),
-            width: 1,
+            color: AppColors.primaryLight.withValues(alpha: 0.45),
+            width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.60),
-              blurRadius: 20,
+              color: Colors.black.withValues(alpha: 0.65),
+              blurRadius: 24,
               offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.20),
+              blurRadius: 16,
             ),
           ],
         ),
-        child: Row(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.25),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.chat_bubble_outline_rounded,
-                color: AppColors.primaryLight,
-                size: 14,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Flexible(
-              child: _TypewriterText(
-                key: ValueKey(widget.text),
-                text: widget.text,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  height: 1.35,
-                  color: Colors.white,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.25),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    color: AppColors.primaryLight,
+                    size: 14,
+                  ),
                 ),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: _TypewriterText(
+                    key: ValueKey(widget.text),
+                    text: widget.text,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      height: 1.35,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // 8-Second Countdown Badge
+                AnimatedBuilder(
+                  animation: _progressController,
+                  builder: (context, _) {
+                    final remainingSecs = ((1.0 - _progressController.value) * 8).ceil();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.primaryLight.withValues(alpha: 0.4),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Text(
+                        '${remainingSecs.clamp(1, 8)}s',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryLight,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Animated 8-Second Visual Progress Line
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: AnimatedBuilder(
+                animation: _progressController,
+                builder: (context, _) {
+                  return LinearProgressIndicator(
+                    value: 1.0 - _progressController.value,
+                    minHeight: 2.5,
+                    backgroundColor: Colors.white12,
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryLight),
+                  );
+                },
               ),
             ),
           ],

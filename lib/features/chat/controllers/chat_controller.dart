@@ -255,7 +255,7 @@ class ChatController extends StateNotifier<ChatState> {
       if (imageBytes != null && imageBytes.isNotEmpty) {
         // Image attachment -> Always use Gemini Multimodal Vision
         aiResponse = await _geminiService.generateCompanionResponse(
-          userMessage: text.trim().isNotEmpty ? text : 'Look at this picture!',
+          userMessage: text.trim().isNotEmpty ? text : 'Spider-Man, please analyze this image and tell me your full Spidey review and rating!',
           imageBytes: imageBytes,
           mimeType: mimeType,
           userName: heroName,
